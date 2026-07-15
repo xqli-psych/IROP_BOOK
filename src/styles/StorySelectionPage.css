@@ -1,0 +1,101 @@
+.story-selection-page {
+  padding: 40px 56px;
+  background: #fff7eb;
+  color: #111;
+  text-align: center;
+}
+
+.story-selection-page h1 {
+  margin: 0;
+  font-size: 42px;
+  font-weight: 800;
+}
+
+.story-selection-page > p {
+  margin-top: 10px;
+  font-size: 20px;
+}
+
+.story-grid {
+  margin-top: 42px;
+  display: grid;
+  grid-template-columns: repeat(3, 310px);
+  gap: 70px;
+  justify-content: center;
+  align-items: start;
+}
+
+.story-card {
+  width: 310px;
+  background: transparent;
+  text-align: left;
+}
+
+.story-card img {
+  width: 310px;
+  height: 380px;
+  object-fit: cover;
+  object-position: center;
+  background: #fffaf0;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.18);
+}
+
+.book-placeholder {
+  width: 310px;
+  height: 380px;
+  background: #d9d9d9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #555;
+  font-size: 14px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.18);
+}
+
+.story-card h2 {
+  margin: 12px 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.story-card p {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.story-card button {
+  background: #a9e8b4;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cover-wrapper {
+  position: relative;
+  width: 310px;
+  height: 380px;
+  box-shadow: -6px 6px 4px rgba(0, 0, 0, 0.25);
+}
+
+.cover-wrapper img,
+.cover-wrapper .book-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.cover-view-btn {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  background: #a9e8b4;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: -3px 4px 4px rgba(0, 0, 0, 0.2);
+}
