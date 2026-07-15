@@ -36,7 +36,6 @@ function ReadingPage({ story }) {
 
         {!showPrompt && (
           <AvatarComment
-            videoSrc={story.videos.idle}
             comment={page.avatarComment}
           />
         )}
@@ -44,7 +43,6 @@ function ReadingPage({ story }) {
         {showPrompt && (
           <MSTPrompt
             prompt={page.mstPrompt}
-            videoSrc={story.videos.talking}
             onSkip={() => setShowPrompt(false)}
             onSubmit={() => setShowPrompt(false)}
           />

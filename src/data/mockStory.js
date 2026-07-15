@@ -17,12 +17,5 @@ export const mockStory = {
       mstPrompt:
         "How do you think the boy feels about the alligator under his bed? Why do you think he feels that way?"
     }
-  ],
-  videos: {
-    idle: "/videos/Idle.mov",
-    talking: "/videos/Talking.mov",
-    thinking: "/videos/Thinking.mov",
-    nod: "/videos/Nod.mov",
-    celebrate: "/videos/Celebrate.mov"
-  }
+  ]
 };
