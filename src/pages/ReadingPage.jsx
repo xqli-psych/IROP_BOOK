@@ -22,31 +22,33 @@ function ReadingPage({ story }) {
       />
 
       <main className="reading-layout">
-        <StoryBook
-          leftImage={page.leftImage}
-          rightImage={page.rightImage}
-          faded={showPrompt}
-        />
+        <div className="reading-main">
+          <StoryBook
+            leftImage={page.leftImage}
+            rightImage={page.rightImage}
+            faded={showPrompt}
+          />
+
+          {!showPrompt && (
+            <AvatarComment
+              comment={page.avatarComment}
+            />
+          )}
+
+          {showPrompt && (
+            <MSTPrompt
+              prompt={page.mstPrompt}
+              onSkip={() => setShowPrompt(false)}
+              onSubmit={() => setShowPrompt(false)}
+            />
+          )}
+        </div>
 
         <TranscriptDrawer
-          open={transcriptOpen}
+          isOpen={transcriptOpen}
           transcript={page.transcript}
           onToggle={() => setTranscriptOpen(!transcriptOpen)}
         />
-
-        {!showPrompt && (
-          <AvatarComment
-            comment={page.avatarComment}
-          />
-        )}
-
-        {showPrompt && (
-          <MSTPrompt
-            prompt={page.mstPrompt}
-            onSkip={() => setShowPrompt(false)}
-            onSubmit={() => setShowPrompt(false)}
-          />
-        )}
       </main>
     </div>
   );

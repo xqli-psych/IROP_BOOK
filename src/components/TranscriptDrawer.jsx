@@ -1,20 +1,23 @@
-function TranscriptDrawer({ open, transcript, onToggle }) {
-  if (!open) {
-    return (
-      <button className="transcript-tab" onClick={onToggle}>
-        📄
-      </button>
-    );
-  }
-
+function TranscriptDrawer({ isOpen, onToggle, transcript }) {
   return (
-    <aside className="transcript-drawer">
-      <p>{transcript}</p>
+    <div className={`transcript-drawer${isOpen ? " transcript-drawer-open" : ""}`}>
+      <div className="transcript-panel" id="transcript-panel">
+        <h3>Story Transcript</h3>
+        <p>{transcript}</p>
+      </div>
 
-      <button className="transcript-close" onClick={onToggle}>
-        Close
+      <button
+        className="transcript-tab"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls="transcript-panel"
+        aria-label={isOpen ? "Close transcript" : "Open transcript"}
+      >
+        <span className="transcript-tab-icon" aria-hidden="true">
+          {isOpen ? "›" : "‹"}
+        </span>
       </button>
-    </aside>
+    </div>
   );
 }
 
