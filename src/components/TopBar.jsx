@@ -1,4 +1,4 @@
-function TopBar({ title, part, totalParts, onContinue }) {
+function TopBar({ title, part, totalParts, onContinue, showContinue = true }) {
   return (
     <header className="top-bar">
       <button className="pause-btn">
@@ -17,9 +17,13 @@ function TopBar({ title, part, totalParts, onContinue }) {
         </div>
       </div>
 
-      <button className="continue-btn" onClick={onContinue}>
-        Continue
-      </button>
+      {showContinue ? (
+        <button className="continue-btn" onClick={onContinue}>
+          Continue
+        </button>
+      ) : (
+        <div className="continue-btn-spacer" aria-hidden="true" />
+      )}
     </header>
   );
 }

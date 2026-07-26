@@ -15,7 +15,9 @@ export const mockStory = {
       avatarComment:
         "Oh no... there’s really an alligator under the bed! I wonder what he will do.",
       mstPrompt:
-        "How do you think the boy feels about the alligator under his bed? Why do you think he feels that way?"
+        "How do you think the boy feels about the alligator under his bed? Why do you think he feels that way?",
+      mstResponse:
+        "I think so too! It would feel scary if you thought there was an alligator under your bed."
     }
   ]
 };

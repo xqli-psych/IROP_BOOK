@@ -6,6 +6,7 @@ import SessionSetupPage from "./pages/SessionSetupPage";
 import StorySelectionPage from "./pages/StorySelectionPage";
 import StoryPreviewPage from "./pages/StoryPreviewPage";
 import ReadingPage from "./pages/ReadingPage";
+import FinishedPage from "./pages/FinishedPage";
 
 import "./App.css";
 
@@ -44,7 +45,21 @@ function App() {
     );
   }
 
-  return <ReadingPage story={mockStory} />;
+  if (screen === "finished") {
+    return (
+      <FinishedPage
+        story={mockStory}
+        onReturnToStories={() => setScreen("selection")}
+      />
+    );
+  }
+
+  return (
+    <ReadingPage
+      story={mockStory}
+      onFinish={() => setScreen("finished")}
+    />
+  );
 }
 
 export default App;

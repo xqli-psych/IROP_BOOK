@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 function TranscriptDrawer({ isOpen, onToggle, transcript }) {
   return (
     <div className={`transcript-drawer${isOpen ? " transcript-drawer-open" : ""}`}>
@@ -14,7 +16,7 @@ function TranscriptDrawer({ isOpen, onToggle, transcript }) {
         aria-label={isOpen ? "Close transcript" : "Open transcript"}
       >
         <span className="transcript-tab-icon" aria-hidden="true">
-          {isOpen ? "›" : "‹"}
+          {isOpen ? <ChevronRight size={22} /> : <ChevronLeft size={22} />}
         </span>
       </button>
     </div>
