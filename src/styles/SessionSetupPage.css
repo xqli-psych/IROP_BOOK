@@ -77,15 +77,3 @@
   background: #a9e8b4;
 }
 
-.session-avatar {
-  position: absolute;
-  left: 55px;
-  bottom: -10px;
-  width: 260px;
-  height: 330px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #777;
-  font-weight: 700;
-}

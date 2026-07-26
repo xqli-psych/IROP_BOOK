@@ -104,18 +104,19 @@
 
 .avatar-comment {
   position: absolute;
-  left: 80px;
+  left: 32px;
   right: 80px;
-  bottom: 8px;
+  bottom: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 18px;
 }
 
 .avatar-video {
-  width: 95px;
-  height: 95px;
-  object-fit: contain;
+  width: 120px;
+  height: 130px;
+  object-fit: cover;
+  object-position: top;
   flex-shrink: 0;
 }
 

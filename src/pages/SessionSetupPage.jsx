@@ -32,10 +32,6 @@ function SessionSetupPage({ onContinue, onBack }) {
           Continue
         </button>
       </div>
-
-      <div className="session-avatar">
-        Avatar Placeholder
-      </div>
     </div>
   );
 }

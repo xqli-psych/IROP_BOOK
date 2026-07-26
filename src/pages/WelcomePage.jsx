@@ -9,7 +9,11 @@ function WelcomePage({ onStart }) {
       </p>
 
     <div className="welcome-avatar">
-    Avatar Placeholder
+      <img
+        className="avatar-media"
+        src="/images/Avatar_Image_nobg.png"
+        alt="Reading companion avatar"
+      />
     </div>
 
       <div className="welcome-message">

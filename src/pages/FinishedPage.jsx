@@ -14,21 +14,25 @@ function FinishedPage({ story, onReturnToStories }) {
           Your reading session has been saved.
         </p>
 
-        <div className="finished-content">
-          <div className="finished-avatar">Avatar Placeholder</div>
+        <div className="finished-avatar">
+          <img
+            className="avatar-media"
+            src="/images/Avatar_Image_nobg.png"
+            alt="Reading companion avatar"
+          />
+        </div>
 
-          <div className="finished-message">
-            <p>
-              Thank you for reading and sharing your thoughts with me. I really
-              enjoyed hearing what you think!
-              <br />
-              Would you like to read more stories with me?
-            </p>
+        <button className="finished-return-btn" onClick={onReturnToStories}>
+          Return to Choosing Stories
+        </button>
 
-            <button onClick={onReturnToStories}>
-              Return to Choosing Stories
-            </button>
-          </div>
+        <div className="finished-message">
+          <p>
+            Thank you for reading and sharing your thoughts with me. I really
+            enjoyed hearing what you think!
+            <br />
+            Would you like to read more stories with me?
+          </p>
         </div>
       </div>
     </div>
