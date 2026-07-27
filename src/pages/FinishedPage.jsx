@@ -1,4 +1,4 @@
-import { Save } from "lucide-react";
+import { Save, Undo2 } from "lucide-react";
 
 function FinishedPage({ story, onReturnToStories }) {
   return (
@@ -10,7 +10,7 @@ function FinishedPage({ story, onReturnToStories }) {
 
       <div className="finished-body">
         <p className="finished-save-note">
-          <Save size={18} className="finished-save-icon" aria-hidden="true" />
+          <Save size={22} className="finished-save-icon" aria-hidden="true" />
           Your reading session has been saved.
         </p>
 
@@ -23,6 +23,7 @@ function FinishedPage({ story, onReturnToStories }) {
         </div>
 
         <button className="finished-return-btn" onClick={onReturnToStories}>
+          <Undo2 size={20} aria-hidden="true" />
           Return to Choosing Stories
         </button>
 

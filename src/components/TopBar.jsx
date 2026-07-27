@@ -1,8 +1,11 @@
+import { ArrowLeft } from "lucide-react";
+
 function TopBar({ title, part, totalParts, onContinue, showContinue = true }) {
   return (
     <header className="top-bar">
       <button className="pause-btn">
-        ← Pause/End<br />Session
+        <ArrowLeft size={18} aria-hidden="true" />
+        <span>Pause/End<br />Session</span>
       </button>
 
       <div className="top-center">

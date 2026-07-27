@@ -67,6 +67,9 @@
 }
 
 .welcome-message button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   background: #a9e8b4;
   border: none;
   border-radius: 18px;

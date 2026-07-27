@@ -1,5 +1,7 @@
 .story-selection-page {
-  padding: 40px 56px;
+  position: relative;
+  box-sizing: border-box;
+  padding: 40px 56px 96px;
   background: #fff7eb;
   color: #111;
   text-align: center;
@@ -90,6 +92,9 @@
   position: absolute;
   right: 14px;
   bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: #a9e8b4;
   border: none;
   border-radius: 12px;
@@ -98,4 +103,28 @@
   font-weight: 700;
   cursor: pointer;
   box-shadow: -3px 4px 4px rgba(0, 0, 0, 0.2);
+}
+
+.story-nav-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58px;
+  background: #f2d2a0;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.story-nav-bar button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 26px;
+  font-weight: 700;
+  cursor: pointer;
 }

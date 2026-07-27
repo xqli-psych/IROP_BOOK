@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mic } from "lucide-react";
+import { Mic, ArrowLeft } from "lucide-react";
 
 function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
   const [answer, setAnswer] = useState("");
@@ -29,7 +29,8 @@ function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
           ) : (
             <>
               <button className="mst-back-btn" onClick={onBack}>
-                ← Back
+                <ArrowLeft size={16} aria-hidden="true" />
+                Back
               </button>
               <button className="mst-skip-btn" onClick={onSkip}>
                 Skip for now
@@ -39,32 +40,39 @@ function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
         </div>
       </div>
 
-      {submitted ? (
-        <div className="mst-reaction-panel">
-          <p>{reaction}</p>
-        </div>
-      ) : (
-        <div className="mst-answer-panel">
-          <label htmlFor="mst-answer">Type or say your answer:</label>
-          <div className="mst-answer-row">
-            <input
-              id="mst-answer"
-              type="text"
-              value={answer}
-              onChange={(event) => setAnswer(event.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            {/* Voice input is out of scope for this prototype — decorative only. */}
-            <button
-              type="button"
-              className="mst-mic-btn"
-              aria-label="Voice input (not available yet)"
-            >
-              <Mic size={20} aria-hidden="true" />
-            </button>
+      <div className="mst-bottom-row">
+        <img
+          className="avatar-video"
+          src="/images/Avatar_Image_nobg.png"
+          alt="Reading companion avatar"
+        />
+
+        {submitted ? (
+          <div className="mst-reaction-panel">
+            <p>{reaction}</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="mst-answer-panel">
+            <label htmlFor="mst-answer">Type or say your answer:</label>
+            <div className="mst-answer-row">
+              <input
+                id="mst-answer"
+                type="text"
+                value={answer}
+                onChange={(event) => setAnswer(event.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <button
+                type="button"
+                className="mst-mic-btn"
+                aria-label="Voice input (not available yet)"
+              >
+                <Mic size={20} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }

@@ -10,8 +10,15 @@ body,
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Roboto", Arial, sans-serif;
   background: #222;
   display: flex;
   justify-content: center;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }

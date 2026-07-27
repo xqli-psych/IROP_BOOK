@@ -14,10 +14,8 @@ function ReadingPage({ story, onFinish }) {
   const page = story.pages[pageIndex];
   const isLastPage = pageIndex >= story.pages.length - 1;
 
-  // Skipping (or continuing past the reaction) moves to the next mock page;
-  // once there isn't one, it goes straight to the finished-story screen.
-  // TODO: once a real backend supplies more parts, this is where paging
-  // through story.pages should be replaced with fetching the next part.
+  // TODO: once a real backend supplies more parts, replace this paging
+  // through story.pages with fetching the next part.
   const goToNextPageOrFinish = () => {
     setShowPrompt(false);
     if (isLastPage) {

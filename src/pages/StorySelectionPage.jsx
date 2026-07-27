@@ -1,3 +1,7 @@
+import { Play } from "lucide-react";
+
+import StoryNavBar from "../components/StoryNavBar";
+
 import "../styles/StorySelectionPage.css";
 
 function StorySelectionPage({ story, onViewStory }) {
@@ -15,6 +19,7 @@ function StorySelectionPage({ story, onViewStory }) {
             </div>
 
             <button className="cover-view-btn">
+              <Play size={16} aria-hidden="true" />
               View Story
             </button>
           </div>
@@ -35,6 +40,7 @@ function StorySelectionPage({ story, onViewStory }) {
               className="cover-view-btn"
               onClick={onViewStory}
             >
+              <Play size={16} aria-hidden="true" />
               View Story
             </button>
           </div>
@@ -51,6 +57,7 @@ function StorySelectionPage({ story, onViewStory }) {
             </div>
 
             <button className="cover-view-btn">
+              <Play size={16} aria-hidden="true" />
               View Story
             </button>
           </div>
@@ -60,6 +67,8 @@ function StorySelectionPage({ story, onViewStory }) {
           <p>Estimated Time</p>
         </div>
       </div>
+
+      <StoryNavBar />
     </div>
   );
 }

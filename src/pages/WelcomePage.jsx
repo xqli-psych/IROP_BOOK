@@ -1,3 +1,5 @@
+import { Play } from "lucide-react";
+
 function WelcomePage({ onStart }) {
   return (
     <div className="app welcome-page">
@@ -23,6 +25,7 @@ function WelcomePage({ onStart }) {
         </p>
 
         <button onClick={onStart}>
+          <Play size={26} aria-hidden="true" />
           Start Reading
         </button>
       </div>

@@ -1,3 +1,5 @@
+import { Play, ArrowLeft } from "lucide-react";
+
 import "../styles/StoryPreviewPage.css";
 
 function StoryPreviewPage({ story, onBack, onBegin }) {
@@ -5,7 +7,8 @@ function StoryPreviewPage({ story, onBack, onBegin }) {
     <div className="app story-preview-page">
       <section className="preview-left">
         <button className="back-btn" onClick={onBack}>
-          ← Back
+          <ArrowLeft size={22} aria-hidden="true" />
+          Back
         </button>
 
         <div className="preview-cover">
@@ -44,6 +47,7 @@ function StoryPreviewPage({ story, onBack, onBegin }) {
           </p>
 
           <button className="begin-reading-btn" onClick={onBegin}>
+            <Play size={24} aria-hidden="true" />
             Begin Reading
           </button>
         </div>

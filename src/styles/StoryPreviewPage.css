@@ -20,6 +20,9 @@
 }
 
 .back-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: #dfe3e6;
   border: none;
   border-radius: 16px;
@@ -89,6 +92,9 @@
 }
 
 .begin-reading-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: #a9e8b4;
   border: none;
   border-radius: 18px;

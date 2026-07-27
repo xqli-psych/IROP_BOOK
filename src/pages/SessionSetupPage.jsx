@@ -1,3 +1,5 @@
+import { ArrowLeft } from "lucide-react";
+
 import "../styles/SessionSetupPage.css";
 
 function SessionSetupPage({ onContinue, onBack }) {
@@ -25,7 +27,8 @@ function SessionSetupPage({ onContinue, onBack }) {
 
       <div className="session-actions">
         <button className="back-action" onClick={onBack}>
-          ← Back
+          <ArrowLeft size={26} aria-hidden="true" />
+          Back
         </button>
 
         <button className="continue-action" onClick={onContinue}>
