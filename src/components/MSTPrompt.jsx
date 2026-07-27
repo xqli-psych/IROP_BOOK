@@ -18,10 +18,12 @@ function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
 
   return (
     <>
-      <div className="mst-question-panel">
-        <p className="mst-question">{prompt}</p>
+      <div className="mst-question-wrapper">
+        <div className="mst-question-panel">
+          <p className="mst-question">{prompt}</p>
+        </div>
 
-        <div className={`mst-question-actions${submitted ? " mst-question-actions-continue" : ""}`}>
+        <div className="mst-question-actions">
           {submitted ? (
             <button className="mst-continue-btn" onClick={onContinue}>
               Continue

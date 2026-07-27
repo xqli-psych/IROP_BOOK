@@ -58,6 +58,7 @@ function App() {
     <ReadingPage
       story={mockStory}
       onFinish={() => setScreen("finished")}
+      onExit={() => setScreen("selection")}
     />
   );
 }

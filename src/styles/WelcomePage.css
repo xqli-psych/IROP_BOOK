@@ -1,25 +1,38 @@
 .welcome-page {
-  position: relative;
   background: #fff7eb;
   color: #111;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 44px 64px 0;
   text-align: center;
 }
 
-.welcome-page h1 {
+.welcome-header {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f2d2a0;
+  padding: 30px 64px 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.welcome-header h1 {
   margin: 0;
   font-size: 56px;
   font-weight: 800;
 }
 
-.welcome-page > p {
-  margin: 22px 0 42px;
+.welcome-header p {
+  margin: 16px auto 0;
   max-width: 900px;
   font-size: 30px;
   line-height: 1.25;
+}
+
+.welcome-body {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  overflow: hidden;
 }
 
 .welcome-avatar {

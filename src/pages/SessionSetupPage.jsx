@@ -5,11 +5,13 @@ import "../styles/SessionSetupPage.css";
 function SessionSetupPage({ onContinue, onBack }) {
   return (
     <div className="app session-page">
-      <h1>Let’s Get Started</h1>
+      <header className="session-header">
+        <h1>Let’s Get Started</h1>
 
-      <p className="session-subtitle">
-        Please enter the session code provided to you.
-      </p>
+        <p className="session-subtitle">
+          Please enter the session code provided to you.
+        </p>
+      </header>
 
       <div className="session-form">
         <label htmlFor="session-code">Session code:</label>

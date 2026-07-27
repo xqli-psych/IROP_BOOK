@@ -10,7 +10,7 @@ body,
 }
 
 body {
-  font-family: "Roboto", Arial, sans-serif;
+  font-family: "Inter", Arial, sans-serif;
   background: #222;
   display: flex;
   justify-content: center;

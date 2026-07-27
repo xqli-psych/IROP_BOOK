@@ -11,7 +11,7 @@ export const mockStory = {
       leftImage: "/images/alligator-page-1.png",
       rightImage: "/images/alligator-page-2.png",
       transcript:
-        "There used to be an alligator under my bed. When it was time to go to sleep, I had to be very careful so I’d call Mom and Dad. But they never saw it. It was up to me. I just had to do something about that alligator.",
+        "There used to be an alligator under my bed. When it was time to go to sleep, I had to be very careful so I’d call Mom and Dad. But they never saw it. It was up to me. I just had to do something about that alligator.\nSo I went to the kitchen to get some alligator bait. I filled a paper bag full of things alligators like to eat. I put a peanut butter sandwich, some fruit, and the last piece of pie in the garage. I put cookies down the hall. I left fresh vegetables on the stairs. I put a soda and some candy next to my bed. Then I watched and waited.",
       avatarComment:
         "Oh no... there’s really an alligator under the bed! I wonder what he will do.",
       mstPrompt:

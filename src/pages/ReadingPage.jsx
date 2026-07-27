@@ -5,11 +5,13 @@ import StoryBook from "../components/StoryBook";
 import TranscriptDrawer from "../components/TranscriptDrawer";
 import AvatarComment from "../components/AvatarComment";
 import MSTPrompt from "../components/MSTPrompt";
+import PausedOverlay from "../components/PausedOverlay";
 
-function ReadingPage({ story, onFinish }) {
+function ReadingPage({ story, onFinish, onExit }) {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   const page = story.pages[pageIndex];
   const isLastPage = pageIndex >= story.pages.length - 1;
@@ -33,9 +35,10 @@ function ReadingPage({ story, onFinish }) {
         totalParts={story.totalParts}
         onContinue={() => setShowPrompt(true)}
         showContinue={!showPrompt}
+        onPause={() => setPaused(true)}
       />
 
-      <main className="reading-layout">
+      <main className={`reading-layout${paused ? " reading-layout-paused" : ""}`}>
         <div className="reading-main">
           <StoryBook
             leftImage={page.leftImage}
@@ -66,6 +69,13 @@ function ReadingPage({ story, onFinish }) {
           onToggle={() => setTranscriptOpen(!transcriptOpen)}
         />
       </main>
+
+      {paused && (
+        <PausedOverlay
+          onKeepReading={() => setPaused(false)}
+          onSaveExit={onExit}
+        />
+      )}
     </div>
   );
 }
