@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading Session App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h2>Reading Session with Child AI</h2>
+  
+  <form id="readingForm">
+    <label for="storyText">Current Story Page Text123:</label>
+    <textarea id="storyText" rows="3" required>The thief crept into the baker's shop and took a loaf of bread.</textarea>
+
+    <label for="summaryText">Conversation Summary:</label>
+    <input type="text" id="summaryText" value="Just started reading chapter 1." required>
+
+    <label>1. Record Voice:</label>
+    <div class="record-controls">
+      <button type="button" id="recordBtn">🎤 Start Recording</button>
+      <button type="button" id="stopBtn" disabled>⏹ Stop Recording</button>
+    </div>
+    <audio id="audioPlayback" controls></audio>
+
+    <div class="or-divider">— OR —</div>
+
+    <label for="audioFile">2. Upload Audio File (Optional):</label>
+    <input type="file" id="audioFile" accept="audio/*">
+
+    <button type="submit" id="submitBtn">Analyze Reading</button>
+  </form>
+
+  <div id="responseArea">
+    <h3>Child AI Says:</h3>
+    <p id="childResponseText"></p>
+    
+    <h4>Detected Transcript:</h4>
+    <p id="transcriptText" style="font-style: italic; color: #555;"></p>
+  </div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
