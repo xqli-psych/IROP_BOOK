@@ -73,6 +73,10 @@ function ReadingPage({ story, onFinish, onExit }) {
       {paused && (
         <PausedOverlay
           onKeepReading={() => setPaused(false)}
+          // "Save & Exit" is really just "Exit" right now — it doesn't save anything.
+          // Before this can go to the backend, we need an endpoint that records
+          // pageIndex (and probably the transcript scroll position) so the story
+          // can pick back up where the reader left off next time.
           onSaveExit={onExit}
         />
       )}

@@ -2,8 +2,6 @@ import { Play } from "lucide-react";
 
 import StoryNavBar from "../components/StoryNavBar";
 
-import "../styles/StorySelectionPage.css";
-
 function StorySelectionPage({ story, onViewStory }) {
   return (
     <div className="app story-selection-page">
@@ -13,8 +11,11 @@ function StorySelectionPage({ story, onViewStory }) {
       </header>
 
       <div className="story-selection-body">
+        {/* The two placeholder entries below are just filling out the grid for now.
+            Once there's a real "list stories" endpoint, this whole grid should be
+            generated from that response instead of three hand-written cards. */}
         <div className="story-grid">
-          <div className="story-card placeholder-card">
+          <div className="story-card">
             <div className="cover-wrapper">
               <div className="book-placeholder">
                 Book Cover Placeholder
@@ -52,7 +53,7 @@ function StorySelectionPage({ story, onViewStory }) {
             <p>{story.time}</p>
           </div>
 
-          <div className="story-card placeholder-card">
+          <div className="story-card">
             <div className="cover-wrapper">
               <div className="book-placeholder">
                 Book Cover Placeholder

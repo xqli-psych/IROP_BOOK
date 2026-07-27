@@ -1,7 +1,5 @@
 import { Play, ArrowLeft } from "lucide-react";
 
-import "../styles/StoryPreviewPage.css";
-
 function StoryPreviewPage({ story, onBack, onBegin }) {
   return (
     <div className="app story-preview-page">

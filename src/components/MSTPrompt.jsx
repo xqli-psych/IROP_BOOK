@@ -7,6 +7,10 @@ function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
 
   const handleSubmit = () => {
     if (!answer.trim()) return;
+    // The typed answer just flips local state right now — it never actually goes
+    // anywhere. Once the backend exists, this should send `answer` up so it can be
+    // saved against the session, and `reaction` below should probably come back
+    // from that call (or an LLM prompt) instead of being the same fixed line every time.
     setSubmitted(true);
   };
 

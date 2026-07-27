@@ -1,3 +1,7 @@
+// Stand-in for whatever a "get story" endpoint will eventually return. Once the
+// backend is up, this whole object (and the totalParts/pages split) should come
+// from the API instead of living here — don't build more mock stories, wire up
+// the real fetch instead.
 export const mockStory = {
   id: "alligator",
   title: "There’s an Alligator Under My Bed",

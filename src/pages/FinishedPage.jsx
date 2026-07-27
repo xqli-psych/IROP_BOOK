@@ -9,8 +9,11 @@ function FinishedPage({ story, onReturnToStories }) {
       </header>
 
       <div className="finished-body">
+        {/* This always says "saved" — there's no actual save happening yet. Swap this
+            in once the backend confirms the session was persisted, and probably show
+            something different if that call fails. */}
         <p className="finished-save-note">
-          <Save size={22} className="finished-save-icon" aria-hidden="true" />
+          <Save size={22} aria-hidden="true" />
           Your reading session has been saved.
         </p>
 

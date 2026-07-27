@@ -1,7 +1,5 @@
 import { ArrowLeft } from "lucide-react";
 
-import "../styles/SessionSetupPage.css";
-
 function SessionSetupPage({ onContinue, onBack }) {
   return (
     <div className="app session-page">
@@ -16,6 +14,10 @@ function SessionSetupPage({ onContinue, onBack }) {
       <div className="session-form">
         <label htmlFor="session-code">Session code:</label>
 
+        {/* This input doesn't do anything yet — it's not even wired to state.
+            Continue should send whatever's typed here to the backend to check
+            it's a real, unexpired code before letting the user through, and
+            show an error inline if it isn't. */}
         <input
           id="session-code"
           type="text"
