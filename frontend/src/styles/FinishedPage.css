@@ -1,0 +1,105 @@
+.finished-page {
+  background: #fff7eb;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+}
+
+.finished-header {
+  background: #f2d2a0;
+  text-align: center;
+  padding: 36px 40px 26px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.finished-header h1 {
+  margin: 0;
+  font-size: 52px;
+  font-weight: 800;
+}
+
+.finished-header p {
+  margin: 12px 0 0;
+  font-size: 26px;
+}
+
+.finished-body {
+  position: relative;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.finished-save-note {
+  position: absolute;
+  left: 2.1%;
+  top: 5.9%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 20px;
+  color: #4a4a4a;
+}
+
+.finished-avatar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  height: 90%;
+  aspect-ratio: 512 / 765;
+  box-sizing: border-box;
+}
+
+.finished-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.finished-return-btn {
+  position: absolute;
+  right: 11.3%;
+  bottom: calc(3% + 150px + 10px);
+  width: 15%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e8c28f;
+  border: none;
+  border-radius: 16px;
+  padding: 12px 10px;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  box-shadow: 0 4px 5px rgba(0, 0, 0, 0.25);
+}
+
+.finished-return-btn svg {
+  flex-shrink: 0;
+}
+
+.finished-message {
+  position: absolute;
+  left: 10.3%;
+  bottom: 3%;
+  width: 78.4%;
+  min-height: 150px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.9);
+  border: 3px solid #e8c28f;
+  border-radius: 16px;
+  padding: 20px 26px;
+  box-shadow: 0 4px 5px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+}
+
+.finished-message p {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.4;
+}

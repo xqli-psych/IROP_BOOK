@@ -1,0 +1,95 @@
+.welcome-page {
+  background: #fff7eb;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.welcome-header {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f2d2a0;
+  padding: 30px 64px 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.welcome-header h1 {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 800;
+}
+
+.welcome-header p {
+  margin: 16px auto 0;
+  max-width: 900px;
+  font-size: 30px;
+  line-height: 1.25;
+}
+
+.welcome-body {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  overflow: hidden;
+}
+
+.welcome-avatar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  height: 640px;
+  background: transparent;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.welcome-avatar img {
+  object-fit: cover;
+  object-position: top;
+}
+
+.welcome-message {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 980px;
+  min-height: 170px;
+  box-sizing: border-box;
+  background: rgba(255, 250, 242, 0.75);
+  border: 4px solid #e8c28f;
+  border-radius: 18px;
+  padding: 44px 52px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  text-align: left;
+  box-shadow: -6px 6px 4px rgba(0, 0, 0, 0.25);
+  z-index: 3;
+}
+
+.welcome-message p {
+  flex: 1;
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.25;
+}
+
+.welcome-message button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #a9e8b4;
+  border: none;
+  border-radius: 18px;
+  padding: 18px 30px;
+  font-size: 30px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: -4px 5px 4px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
