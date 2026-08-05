@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { mockStory } from "./data/mockStory";
 
 import WelcomePage from "./pages/WelcomePage";
 import SessionSetupPage from "./pages/SessionSetupPage";
@@ -12,6 +11,7 @@ import "./App.css";
 
 function App() {
   const [screen, setScreen] = useState("welcome");
+  const [selectedStory, setSelectedStory] = useState(null);
 
   if (screen === "welcome") {
     return <WelcomePage onStart={() => setScreen("setup")} />;
@@ -29,8 +29,10 @@ function App() {
   if (screen === "selection") {
     return (
       <StorySelectionPage
-        story={mockStory}
-        onViewStory={() => setScreen("preview")}
+        onViewStory={(story) => {
+          setSelectedStory(story);
+          setScreen("preview");
+        }}
       />
     );
   }
@@ -38,7 +40,7 @@ function App() {
   if (screen === "preview") {
     return (
       <StoryPreviewPage
-        story={mockStory}
+        story={selectedStory}
         onBack={() => setScreen("selection")}
         onBegin={() => setScreen("reading")}
       />
@@ -48,7 +50,7 @@ function App() {
   if (screen === "finished") {
     return (
       <FinishedPage
-        story={mockStory}
+        story={selectedStory}
         onReturnToStories={() => setScreen("selection")}
       />
     );
@@ -56,7 +58,7 @@ function App() {
 
   return (
     <ReadingPage
-      story={mockStory}
+      story={selectedStory}
       onFinish={() => setScreen("finished")}
       onExit={() => setScreen("selection")}
     />

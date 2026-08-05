@@ -1,38 +1,96 @@
-import { useState } from "react";
-
+import React, { useState, useEffect } from "react";
 import TopBar from "../components/TopBar";
 import StoryBook from "../components/StoryBook";
 import TranscriptDrawer from "../components/TranscriptDrawer";
 import AvatarComment from "../components/AvatarComment";
 import MSTPrompt from "../components/MSTPrompt";
 import PausedOverlay from "../components/PausedOverlay";
+import { apiClient } from "../utils/apiClient";
+import { useSession } from "../hooks/useSession";
 
 function ReadingPage({ story, onFinish, onExit }) {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [pageIndex, setPageIndex] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0); // 0-indexed for React, but DB is 1-indexed
   const [paused, setPaused] = useState(false);
+  
+  // New state for dynamic database content
+  const [pageData, setPageData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const { sessionId } = useSession();
 
-  const page = story.pages[pageIndex];
-  const isLastPage = pageIndex >= story.pages.length - 1;
+  // The actual database page number is pageIndex + 1
+  const currentPageNumber = pageIndex + 1;
+  const isLastPage = currentPageNumber >= story.total_parts; // Using total_parts from DB
 
-  // TODO: once a real backend supplies more parts, replace this paging
-  // through story.pages with fetching the next part.
-  const goToNextPageOrFinish = () => {
+  // Fetch page data whenever the pageIndex changes
+  useEffect(() => {
+    const fetchPage = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getStoryPage(story.id, currentPageNumber);
+        if (response.success && response.data) {
+          setPageData(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch story page:", err);
+        alert("Failed to load the page. Please check your connection.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (story && story.id) {
+      fetchPage();
+    }
+  }, [story, currentPageNumber]);
+
+  const goToNextPageOrFinish = async () => {
     setShowPrompt(false);
+    
     if (isLastPage) {
+      // If it's the last page, we finish the story
       onFinish();
     } else {
-      setPageIndex((index) => index + 1);
+      const nextPageIndex = pageIndex + 1;
+      setPageIndex(nextPageIndex);
+      
+      // Save progress to the backend session table silently in the background
+      try {
+        await apiClient.updateProgress(sessionId, nextPageIndex + 1);
+      } catch (err) {
+        console.error("Failed to save progress", err);
+      }
     }
   };
+
+  const handleSaveAndExit = async () => {
+    try {
+      // Save the current page to the database before routing away
+      await apiClient.updateProgress(sessionId, currentPageNumber);
+      onExit();
+    } catch (err) {
+      console.error("Failed to save session before exiting:", err);
+      onExit(); // Exit anyway even if save fails
+    }
+  };
+
+  // Show a loading screen while waiting for the database
+  if (isLoading || !pageData) {
+    return (
+      <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <h2>Loading page...</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
       <TopBar
         title={story.title}
-        part={page.part}
-        totalParts={story.totalParts}
+        part={currentPageNumber}
+        totalParts={story.total_parts}
         onContinue={() => setShowPrompt(true)}
         showContinue={!showPrompt}
         onPause={() => setPaused(true)}
@@ -41,31 +99,35 @@ function ReadingPage({ story, onFinish, onExit }) {
       <main className={`reading-layout${paused ? " reading-layout-paused" : ""}`}>
         <div className="reading-main">
           <StoryBook
-            leftImage={page.leftImage}
-            rightImage={page.rightImage}
+            leftImage={pageData.left_image_url}
+            rightImage={pageData.right_image_url}
             faded={showPrompt}
           />
 
           {!showPrompt && (
             <AvatarComment
-              comment={page.avatarComment}
+              comment={pageData.avatar_comment}
             />
           )}
 
           {showPrompt && (
             <MSTPrompt
-              prompt={page.mstPrompt}
-              reaction={page.mstResponse}
+              prompt={pageData.mst_prompt}
+              reaction={pageData.mst_response}
               onBack={() => setShowPrompt(false)}
               onSkip={goToNextPageOrFinish}
               onContinue={goToNextPageOrFinish}
+              
+              // We pass these down so MSTPrompt can submit audio/text to the backend
+              pageId={pageData.id}
+              storyPageText={pageData.page_text}
             />
           )}
         </div>
 
         <TranscriptDrawer
           isOpen={transcriptOpen}
-          transcript={page.transcript}
+          transcript={pageData.page_text}
           onToggle={() => setTranscriptOpen(!transcriptOpen)}
         />
       </main>
@@ -73,11 +135,7 @@ function ReadingPage({ story, onFinish, onExit }) {
       {paused && (
         <PausedOverlay
           onKeepReading={() => setPaused(false)}
-          // "Save & Exit" is really just "Exit" right now — it doesn't save anything.
-          // Before this can go to the backend, we need an endpoint that records
-          // pageIndex (and probably the transcript scroll position) so the story
-          // can pick back up where the reader left off next time.
-          onSaveExit={onExit}
+          onSaveExit={handleSaveAndExit}
         />
       )}
     </div>

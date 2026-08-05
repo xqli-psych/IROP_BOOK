@@ -16,7 +16,7 @@ function StoryPreviewPage({ story, onBack, onBegin }) {
           />
         </div>
 
-        <p className="preview-time">◷ {story.time}</p>
+        <p className="preview-time">◷ {story.estimated_time}</p>
       </section>
 
       <section className="preview-right">

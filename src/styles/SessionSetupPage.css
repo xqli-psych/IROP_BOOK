@@ -25,9 +25,13 @@
 }
 
 .session-form {
-  margin: 110px auto 0;
+  margin: 40px auto 0;
   width: 900px;
   text-align: left;
+}
+
+.session-field + .session-field {
+  margin-top: 32px;
 }
 
 .session-form label {
@@ -60,7 +64,7 @@
 .session-actions {
   position: absolute;
   right: 150px;
-  top: 620px;
+  top: 640px;
   display: flex;
   gap: 32px;
 }

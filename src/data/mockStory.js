@@ -22,6 +22,7 @@ export const mockStory = {
         "How do you think the boy feels about the alligator under his bed? Why do you think he feels that way?",
       mstResponse:
         "I think so too! It would feel scary if you thought there was an alligator under your bed."
-    }
+    },
+    
   ]
 };

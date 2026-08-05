@@ -1,21 +1,57 @@
 import { useState } from "react";
-import { Mic, ArrowLeft } from "lucide-react";
+import { Mic, Square, ArrowLeft, Send } from "lucide-react";
+import { useAudioRecorder } from "../hooks/useAudioRecorder";
+import { apiClient } from "../utils/apiClient";
+import { useSession } from "../hooks/useSession";
 
-function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
+function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue, pageId, storyPageText }) {
   const [answer, setAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [aiReaction, setAiReaction] = useState("");
 
-  const handleSubmit = () => {
-    if (!answer.trim()) return;
-    // The typed answer just flips local state right now — it never actually goes
-    // anywhere. Once the backend exists, this should send `answer` up so it can be
-    // saved against the session, and `reaction` below should probably come back
-    // from that call (or an LLM prompt) instead of being the same fixed line every time.
-    setSubmitted(true);
+  const { sessionId } = useSession();
+  const { isRecording, audioBlob, startRecording, stopRecording, clearAudio } = useAudioRecorder();
+
+  const handleSubmit = async () => {
+    if (!answer.trim() && !audioBlob) return;
+    setIsProcessing(true);
+
+    const formData = new FormData();
+    formData.append("sessionId", sessionId);
+    formData.append("pageId", pageId);
+    formData.append("storyPageText", storyPageText);
+
+    if (audioBlob) {
+      formData.append("audioFile", audioBlob, "recording.webm");
+    } else {
+      formData.append("transcriptText", answer);
+    }
+
+    try {
+      const response = await apiClient.analyzeReading(formData);
+      
+      if (response.success) {
+        setAiReaction(response.childResponse);
+        setSubmitted(true);
+        
+        if (response.audioBase64) {
+          const audio = new Audio("data:audio/wav;base64," + response.audioBase64);
+          audio.play();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to analyze reading:", err);
+      alert("Something went wrong while processing your response.");
+    } finally {
+      setIsProcessing(false);
+      clearAudio();
+    }
   };
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
+      event.preventDefault();
       handleSubmit();
     }
   };
@@ -29,16 +65,16 @@ function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
 
         <div className="mst-question-actions">
           {submitted ? (
-            <button className="mst-continue-btn" onClick={onContinue}>
+            <button className="mst-continue-btn" onClick={onContinue} disabled={isProcessing}>
               Continue
             </button>
           ) : (
             <>
-              <button className="mst-back-btn" onClick={onBack}>
+              <button className="mst-back-btn" onClick={onBack} disabled={isProcessing}>
                 <ArrowLeft size={16} aria-hidden="true" />
                 Back
               </button>
-              <button className="mst-skip-btn" onClick={onSkip}>
+              <button className="mst-skip-btn" onClick={onSkip} disabled={isProcessing}>
                 Skip for now
               </button>
             </>
@@ -55,26 +91,47 @@ function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue }) {
 
         {submitted ? (
           <div className="mst-reaction-panel">
-            <p>{reaction}</p>
+            {/* Fallback to original reaction prop if the AI fails to generate one */}
+            <p>{aiReaction || reaction}</p> 
           </div>
         ) : (
           <div className="mst-answer-panel">
-            <label htmlFor="mst-answer">Type or say your answer:</label>
+            <label htmlFor="mst-answer">
+              {isProcessing ? "The child is thinking..." : "Type or say your answer:"}
+            </label>
             <div className="mst-answer-row">
               <input
                 id="mst-answer"
                 type="text"
+                placeholder={isRecording ? "Recording audio..." : audioBlob ? "Audio recorded. Press send." : ""}
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
                 onKeyDown={handleKeyDown}
+                disabled={isRecording || isProcessing || !!audioBlob}
               />
-              <button
-                type="button"
-                className="mst-mic-btn"
-                aria-label="Voice input (not available yet)"
-              >
-                <Mic size={20} aria-hidden="true" />
-              </button>
+              
+              {/* Dynamic button logic based on recording/typing state */}
+              {audioBlob || answer.trim().length > 0 ? (
+                <button
+                  type="button"
+                  className="mst-mic-btn"
+                  onClick={handleSubmit}
+                  disabled={isProcessing}
+                  title="Send Answer"
+                >
+                  <Send size={20} aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={`mst-mic-btn ${isRecording ? "recording" : ""}`}
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={isProcessing}
+                  title={isRecording ? "Stop Recording" : "Start Recording"}
+                >
+                  {isRecording ? <Square size={20} aria-hidden="true" /> : <Mic size={20} aria-hidden="true" />}
+                </button>
+              )}
             </div>
           </div>
         )}
