@@ -1,4 +1,14 @@
-# Backend Integration Notes
+# Backend Integration Notes (superseded)
+
+**This document is stale.** It was written while the app ran entirely on mock
+data; the backend has since been built and wired up end-to-end (see
+[README.md](README.md) and [../backend/README.md](../backend/README.md)). It's
+kept here for historical context on what the original wiring plan looked like,
+but don't trust the specifics below as current — check the actual code (mainly
+`src/utils/apiClient.js` and the page components) instead. Current known gaps
+and roadmap live in `README.md`.
+
+---
 
 This app is a frontend prototype. Every screen currently runs on the mock data in
 `src/data/mockStory.js` and local component state — nothing is actually saved,

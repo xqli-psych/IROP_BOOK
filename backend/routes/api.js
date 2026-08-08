@@ -10,10 +10,6 @@ const router = express.Router();
 router.get("/stories", listStories);
 router.get("/stories/:storyId/pages/:pageNumber", fetchPage);
 
-// Session Routes
-router.post("/sessions/login", loginSession);
-router.put("/sessions/:sessionId/progress", updateProgress);
-
 // Reading & Analysis Routes
 // Modified to ensure the frontend can send either audio or raw text
 router.post("/analyze-reading", upload.single("audioFile"), analyzeReading);

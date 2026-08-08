@@ -1,102 +1,63 @@
-# UROP_BOOK — Backend Overview
+# IROP Reading — Backend
 
-This document explains the backend code for the UROP_BOOK application so teammates can understand how requests flow, where core logic lives, and how to run and extend the system.
+Express API behind the IROP Reading app. Handles session/story data (via
+Supabase) and the MST (Mental State Talk) analysis pipeline: transcribing a
+reader's spoken or typed answer, detecting MST with an LLM, generating an
+in-character child response, and synthesizing that response to speech.
 
-**Quick Summary**
-- Purpose: Accept recorded audio of an elderly reader, transcribe it, detect "mental state talk" (MST), generate a short child-like response, update a conversation summary, persist a session log, and synthesize a child-voiced audio reply.
-- Primary endpoint: `POST /api/analyze-reading` (audio upload + optional `storyPageText`).
+See the [repo root README](../README.md) for how this fits with the frontend.
 
-**Table of Contents**
-- Project setup
-- Request flow / architecture
-- Key files and responsibilities
-- Data model & persistence
-- Environment variables
-- Example request (curl)
-- Development notes & extension ideas
+## Tech stack
 
-**Project setup**
+- **Node.js** (ESM — `"type": "module"`) + **Express 5**
+- **Supabase** (`@supabase/supabase-js`) — Postgres client, no ORM/migrations
+- **LangGraph** (`@langchain/langgraph`) — orchestrates the MST analysis as a
+  small state machine
+- **Groq** (`groq-sdk`, `@langchain/groq`) — Whisper transcription, the chat
+  LLM, and TTS
+- **Multer** — multipart audio upload handling
+- **Zod** — structured/validated LLM output
 
-Prerequisites
-- Node.js (v18+ recommended)
-- A Groq API key for transcription/tts and the Groq/LLM usage
-- A Supabase project + service role key for `session_logs` persistence
+## Project structure
 
-Install
+```
+backend/
+  index.js                    Express app entry point
+  routes/api.js                All route definitions, mounted at /api
+  controllers/
+    storyController.js         GET /stories, GET /stories/:id/pages/:n
+    sessionController.js       login, progress updates, story linking
+    readingController.js       POST /analyze-reading, GET /logs (the core pipeline)
+  services/
+    dbService.js                Every Supabase query in the app
+    transcript.js                Groq Whisper transcription
+    ttsService.js                 Groq TTS (child-voice audio reply)
+  graph/
+    state.js                     GraphState shape
+    nodes.js                     evaluateMst / generateResponse / updateSummary
+    workflow.js                   Wires the nodes into a StateGraph
+  config/
+    env.js                       Loads env vars
+    llm.js                        ChatGroq client config
+    supabase.js                   Supabase client singleton
+  middlewares/upload.js          Multer config (saves to uploads/)
+  public/                        Static assets Express serves directly (legacy;
+                                  the real frontend is in ../frontend)
+```
+
+## Setup & running
+
+Prerequisites:
+- Node.js v18+
+- A Supabase project (Postgres + a service-role key for write access)
+- A Groq API key
 
 ```bash
 npm install
+GROQ_API_KEY=your_key SUPABASE_URL=https://your-project.supabase.co SUPABASE_KEY=your_service_role_key npm start
 ```
 
-Run (development)
-
-```bash
-GROQ_API_KEY=your_key SUPABASE_URL=https://... SUPABASE_KEY=your_key npm start
-```
-
-The server listens on port 3000 by default. The web UI (frontend) is served from the `public/` folder by [index.js](index.js).
-
-**Request flow / architecture**
-
-1. Client uploads an audio recording and (optionally) the page text to `POST /api/analyze-reading` implemented in [routes/api.js](routes/api.js).
-2. `multer` (see [middlewares/upload.js](middlewares/upload.js)) saves the file to `uploads/`.
-3. The request is handled by `analyzeReading` in [controllers/readingController.js](controllers/readingController.js):
-	 - It fetches the latest conversation summary using `getLatestSummary()` from [services/dbService.js](services/dbService.js).
-	 - Calls `transcribeAudio()` in [services/transcript.js](services/transcript.js) which uses Groq's Whisper model to transcribe the audio file.
-	 - Builds an `initialState` object (story page text, previous summary, and transcript) and invokes the LangGraph state machine `graph.invoke(initialState)` from [graph/workflow.js](graph/workflow.js).
-	 - Persists the `graphResult` using `saveSessionLog()` in [services/dbService.js](services/dbService.js).
-	 - Generates child-voiced audio via `generateSpeech()` in [services/ttsService.js](services/ttsService.js) and returns a base64 WAV string to the client.
-	 - Uploaded file is removed (`fs.unlinkSync`) after processing or upon error to avoid disk buildup.
-
-The LangGraph pipeline (see [graph/workflow.js](graph/workflow.js)) runs three nodes in sequence:
-- `evaluate_mst` — analyzes the transcript for MST (mental state talk) using a structured LLM output (see [graph/nodes.js](graph/nodes.js)).
-- `generate_response` — uses LLM to generate a brief, child-like reply that either encourages MST or prompts it.
-- `update_summary` — updates the running conversation summary for future context.
-
-**Key files and responsibilities**
-- [index.js](index.js): Express server bootstrap, static file serving, API router mounting.
-- [config/env.js](config/env.js): Loads environment variables used across the app (`GROQ_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`).
-- [config/llm.js](config/llm.js): Constructs the LLM client used by the graph nodes (`ChatGroq` with `openai/gpt-oss-20b`).
-- [config/supabase.js](config/supabase.js): Exports the configured Supabase client.
-- [routes/api.js](routes/api.js): Defines `POST /analyze-reading` and `GET /logs`.
-- [middlewares/upload.js](middlewares/upload.js): Multer storage configuration for file uploads (saves to `uploads/`).
-- [controllers/readingController.js](controllers/readingController.js): Core request handler `analyzeReading()` and `getLogs()`.
-- [services/transcript.js](services/transcript.js): Calls Groq audio transcription (`whisper-large-v3-turbo`) and returns text.
-- [services/ttsService.js](services/ttsService.js): Calls Groq audio TTS (`canopylabs/orpheus-v1-english`) and returns base64 WAV audio.
-- [services/dbService.js](services/dbService.js): `getLatestSummary()` and `saveSessionLog()` — persistence for `session_logs`.
-- [graph/workflow.js](graph/workflow.js): Assembles the LangGraph `StateGraph` with the `GraphState` shape.
-- [graph/state.js](graph/state.js): Defines the `GraphState` annotation (shape of the graph's state).
-- [graph/nodes.js](graph/nodes.js): Node implementations: `evaluateMst`, `generateResponse`, `updateSummary`.
-
-Notes on a few important functions
-- `analyzeReading(req, res)` in `readingController.js` — full end-to-end orchestration. Handles validation, transcription, graph invocation, logging, TTS, cleanup, and JSON response shaped as:
-
-	- `success`: boolean
-	- `transcript`: string (transcribed text)
-	- `mstDetected`: boolean
-	- `childResponse`: string (generated reply)
-	- `audioBase64`: string (base64-encoded WAV)
-
-- `evaluateMst(state)` — uses a Zod schema to request a structured response from the LLM (`hasMst` and `reasoning`) so the app can programmatically determine whether MST is present.
-
-**Data model & persistence**
-The app writes to a Supabase table `session_logs` via `saveSessionLog()` in [services/dbService.js](services/dbService.js). The inserted columns are:
-- `story_page_text`
-- `transcript`
-- `mst_detected`
-- `mst_analysis`
-- `child_response`
-- `conversation_summary`
-
-Ensure your Supabase table includes a `created_at` timestamp (used when `getLogs()` orders entries).
-
-**Environment variables**
-You must provide these environment variables to run the backend:
-- `GROQ_API_KEY` — Groq SDK API key (used by transcription, tts, and LLM client)
-- `SUPABASE_URL` — your Supabase project URL
-- `SUPABASE_KEY` — Supabase service role key (write access)
-
-Example `.env` snippet:
+Or create a `.env` file (gitignored) instead of inline vars:
 
 ```
 GROQ_API_KEY=sk-xxxx
@@ -104,43 +65,143 @@ SUPABASE_URL=https://xyzcompany.supabase.co
 SUPABASE_KEY=service_role_xxx
 ```
 
-**Example request**
-Use the following `curl` to test `analyze-reading` (replace `audio.webm` and endpoint as needed):
+The server listens on `process.env.PORT || 3000`.
+
+## API reference
+
+All routes are mounted at `/api` (see [routes/api.js](routes/api.js)).
+
+| Method | Path | Controller | Purpose |
+|---|---|---|---|
+| GET | `/stories` | `storyController.listStories` | List all stories |
+| GET | `/stories/:storyId/pages/:pageNumber` | `storyController.fetchPage` | Fetch one page's content |
+| POST | `/sessions/login` | `sessionController.loginSession` | Create a new session from a session code + participation ID |
+| PUT | `/sessions/:sessionId/progress` | `sessionController.updateProgress` | Update the session's current page number |
+| PUT | `/sessions/:sessionId/story` | `sessionController.linkStoryToSession` | Attach a chosen story to a session |
+| POST | `/analyze-reading` | `readingController.analyzeReading` | Transcribe + analyze an MST answer, get back a child response (see below) |
+| GET | `/logs` | `readingController.getLogs` | Raw dump of all `session_logs`, newest first |
+
+### `POST /analyze-reading` in detail
+
+Multipart form request. Required fields: `sessionId`, `pageId`, and either an
+`audioFile` (recorded answer) or `transcriptText` (typed answer); optionally
+`storyPageText` for context.
 
 ```bash
 curl -X POST http://localhost:3000/api/analyze-reading \
-	-F "audioFile=@./audio.webm" \
-	-F "storyPageText=The thief crept into the baker's shop..."
+  -F "sessionId=<uuid>" \
+  -F "pageId=<uuid>" \
+  -F "audioFile=@./answer.webm" \
+  -F "storyPageText=The alligator hid under the bed..."
 ```
 
-Sample success response:
+Flow, in [readingController.analyzeReading](controllers/readingController.js):
+1. Transcribe the uploaded audio via Groq Whisper (`services/transcript.js`),
+   or use `transcriptText` directly.
+2. Load the session's latest conversation summary (`getLatestSummary` in
+   `dbService.js`).
+3. Run the LangGraph pipeline (`graph/workflow.js`) — three sequential LLM
+   calls: `evaluate_mst` (did the reader engage in MST? via Zod-structured
+   output) → `generate_response` (in-character child reply) → `update_summary`
+   (rolling conversation summary for next time).
+4. Persist a `session_logs` row.
+5. Synthesize the child's reply to speech via Groq TTS.
+6. Delete the uploaded temp file.
+
+Response:
 
 ```json
 {
-	"success": true,
-	"transcript": "...transcribed text...",
-	"mstDetected": false,
-	"childResponse": "Why did they do that?",
-	"audioBase64": "UklGR..."
+  "success": true,
+  "transcript": "...",
+  "mstDetected": false,
+  "childResponse": "Why did they do that?",
+  "audioBase64": "UklGR..."
 }
 ```
 
-**Development notes & extension ideas**
-- Security: Do not commit `SUPABASE_KEY` or `GROQ_API_KEY` to source control. Use environment vars / secrets manager.
-- Error handling: The controller uses `unlinkSync` to remove uploads; converting to async `fs.promises.unlink()` would avoid blocking.
-- Scalability: Offload transcription and TTS to background jobs for better throughput and faster API responses.
-- Observability: Add request tracing, metrics, and structured logs.
-- Tests: Add unit tests for `graph/nodes.js` logic by mocking the `llm` client. Add an integration test for `analyzeReading` using a small prerecorded audio fixture.
+This is the slowest endpoint in the app by a wide margin — it makes at least
+four sequential external calls to Groq (transcription, three chat calls inside
+the graph, TTS), none of them parallelized.
 
-**Where to look first when debugging**
-- If transcripts are empty or failing: check `services/transcript.js` and `GROQ_API_KEY`.
-- If DB writes fail: inspect `services/dbService.js` and the Supabase project/policies.
-- If LLM outputs are unexpected: inspect [config/llm.js](config/llm.js) and the prompts in [graph/nodes.js](graph/nodes.js).
+## Data model
 
-If you'd like, I can also:
-- Add inline JSDoc comments to critical functions
-- Produce unit tests for the graph nodes
-- Add a small Postman collection or OpenAPI spec for the endpoints
+No ORM, no migrations — every query lives in [services/dbService.js](services/dbService.js)
+and the schema is managed directly in Supabase. Tables in use:
 
----
-Updated backend README.
+**`stories`** — `id` (uuid), `title`, `author`, `genre`, `estimated_time`, `total_parts`
+
+**`story_pages`**
+```sql
+create table public.story_pages (
+  id uuid not null default gen_random_uuid (),
+  story_id uuid not null,
+  page_number integer not null,
+  left_image_url text null,
+  right_image_url text null,
+  page_text text not null,
+  avatar_comment text null,
+  mst_prompt text null,
+  mst_response text null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint story_pages_pkey primary key (id),
+  constraint story_pages_story_id_page_number_key unique (story_id, page_number),
+  constraint story_pages_story_id_fkey foreign key (story_id) references stories (id) on delete cascade
+);
+```
+`mst_response` is used as a fallback line shown to the reader only if the live
+AI-generated response fails.
+
+**`sessions`** — `id` (uuid), `session_code`, `participation_id`,
+`current_page_number`, `story_id`, `updated_at`. `session_code` is
+**intentionally not unique** — `createOrGetSession` always inserts a fresh row
+per login rather than upserting, so repeat logins with the same code don't
+overwrite a prior session's progress/history (this was a real bug, fixed by
+switching insert-vs-upsert — see git history).
+
+**`session_logs`** — `session_id`, `page_id`, `participation_id` (denormalized
+from the session for easy CSV export), `story_page_text`, `transcript`,
+`mst_detected`, `mst_analysis`, `child_response`, `conversation_summary`,
+`created_at`.
+
+## Where to look first when debugging
+
+- Transcripts empty/failing → `services/transcript.js` and `GROQ_API_KEY`
+- DB writes failing → `services/dbService.js` and Supabase project/policies
+  (row-level security can silently reject writes if misconfigured)
+- LLM output looks wrong → `config/llm.js` and the prompts in `graph/nodes.js`
+- A session's progress got overwritten → check `sessionController.loginSession`
+  / `dbService.createOrGetSession` — this is the exact class of bug that was
+  fixed once already
+
+## Known gaps
+
+- No tests (a good first target: mock the `llm` client and unit-test
+  `graph/nodes.js`, or add an integration test for `analyzeReading` with a
+  small prerecorded audio fixture).
+- No schema migrations — the SQL above is the closest thing to a schema
+  definition in the repo; keep it up to date if you change the table.
+- Uploaded audio cleanup uses `fs.promises.unlink` after the whole pipeline
+  runs — if the pipeline throws partway through, the `catch` block handles
+  cleanup, but there's no retry/dead-letter handling if that also fails.
+- No request tracing/structured logging beyond `console.log`/`console.error`.
+
+## Roadmap / future implementation
+
+See the [repo root README](../README.md#roadmap--future-implementation) for
+the full list. The backend-relevant pieces:
+
+1. **Multi-turn MST conversation per page** — `analyze-reading` and
+   `session_logs` currently model one question/answer/reaction per page;
+   supporting a back-and-forth conversation means deciding how multiple
+   exchanges on the same page relate to each other (same `session_logs` row
+   appended to, or multiple rows tied together).
+2. **TTS for `avatar_comment`** — extend `ttsService.js` usage to the page's
+   `avatar_comment` text, not just the MST reaction.
+3. **More natural/custom TTS voice** — currently a fixed Groq TTS model/voice
+   (`canopylabs/orpheus-v1-english`, voice "hannah").
+4. **Backend support for the nav bar features** (search, saved, history,
+   settings) — history has a natural home querying `session_logs`; the others
+   need new tables/endpoints.
+5. **More books** — add rows to `stories` and `story_pages` (see the schema
+   above) plus page art in the frontend's `public/images/`.
