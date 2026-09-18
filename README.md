@@ -49,12 +49,15 @@ You need two terminals, plus a Supabase project and a Groq API key (ask
 whoever owns those, or see [backend/README.md](backend/README.md) for what to
 provision).
 
+Before starting the backend, make sure there is a [backend/.env] file with the required environment variables and api keys (if not, create a new file). 
+
 ```bash
 # Terminal 1 — backend
 cd backend
 npm install
-GROQ_API_KEY=your_key SUPABASE_URL=https://your-project.supabase.co SUPABASE_KEY=your_service_role_key npm start
-# → listening on http://localhost:3000
+npm start
+# → backend running at http://localhost:3000
+# → API logs: http://localhost:3000/api/logs
 
 # Terminal 2 — frontend
 cd frontend
@@ -63,9 +66,11 @@ npm run dev
 # → http://localhost:5173
 ```
 
-The frontend's API base URL is hardcoded to `http://localhost:3000/api` in
-[frontend/src/utils/apiClient.js](frontend/src/utils/apiClient.js) — there's no
-`.env` for it yet, so if you run the backend on a different port or host,
+Open `http://localhost:5173` to use the application.
+
+The frontend's API base URL is currently hardcoded to `http://localhost:3000/api` in
+[frontend/src/utils/apiClient.js](frontend/src/utils/apiClient.js) — there's no frontend
+`.env` configuration for it yet, so if you run the backend on a different port or host,
 you'll need to change that constant directly.
 
 ## App flow
