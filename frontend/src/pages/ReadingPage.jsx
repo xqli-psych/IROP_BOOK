@@ -114,6 +114,7 @@ function ReadingPage({ story, onFinish, onExit }) {
             <MSTPrompt
               prompt={pageData.mst_prompt}
               reaction={pageData.mst_response}
+              avatarComment={pageData.avatar_comment}
               onBack={() => setShowPrompt(false)}
               onSkip={goToNextPageOrFinish}
               onContinue={goToNextPageOrFinish}

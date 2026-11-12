@@ -4,7 +4,7 @@ import { useAudioRecorder } from "../hooks/useAudioRecorder";
 import { apiClient } from "../utils/apiClient";
 import { useSession } from "../hooks/useSession";
 
-function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue, pageId, storyPageText }) {
+function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue, pageId, storyPageText }) {
   const [answer, setAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -21,6 +21,9 @@ function MSTPrompt({ prompt, reaction, onBack, onSkip, onContinue, pageId, story
     formData.append("sessionId", sessionId);
     formData.append("pageId", pageId);
     formData.append("storyPageText", storyPageText);
+    formData.append("questionText", prompt || "");
+    formData.append("expectedEmotion", reaction || "");
+    formData.append("visualSceneContext", avatarComment || "");
 
     if (audioBlob) {
       formData.append("audioFile", audioBlob, "recording.webm");

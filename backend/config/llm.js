@@ -5,4 +5,5 @@ export const llm = new ChatGroq({
   model: "qwen/qwen3.8-27b",
   temperature: 0.65,
   apiKey: config.GROQ_API_KEY,
+  maxTokens: 350,
 });
