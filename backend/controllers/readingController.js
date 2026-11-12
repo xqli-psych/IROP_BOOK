@@ -11,7 +11,15 @@ export const analyzeReading = async (req, res) => {
   
   try {
     // Extract new relational IDs from the frontend request
-    const { storyPageText, sessionId, pageId, questionText } = req.body;
+    const {
+      storyPageText,
+      sessionId,
+      pageId,
+      questionText,
+      expectedEmotion,
+      expectedResponse,
+      visualSceneContext,
+    } = req.body;
     
     if (!sessionId || !pageId) {
       return res.status(400).json({ error: "Missing sessionId or pageId context." });
@@ -33,44 +41,61 @@ export const analyzeReading = async (req, res) => {
     const previousSummary = await getLatestSummary(sessionId);
 
     const { data: pageData } = await supabase
-      .from("pages")
+      .from("story_pages")
       .select("*")
       .eq("id", pageId)
       .single();
 
     const activeQuestion =
       questionText ||
+      pageData?.mst_prompt ||
       pageData?.question ||
       pageData?.prompt ||
       pageData?.question_text ||
       "";
 
-    let pageImageUrl = "";
-    const rawImgPath = pageData?.image_url || pageData?.image_path || pageData?.image || "";
+    const activeExpectedEmotion =
+      expectedEmotion ||
+      expectedResponse ||
+      pageData?.mst_response ||
+      "";
 
-    if (rawImgPath.startsWith("http")) {
-      pageImageUrl = rawImgPath;
-    } else if (rawImgPath) {
-      try {
-        const fileName = path.basename(rawImgPath);
-        const localImgPath = path.resolve(process.cwd(), "../frontend/public/images", fileName);
-        const imgBuffer = await fs.readFile(localImgPath);
-        const ext = path.extname(fileName).toLowerCase() === ".png" ? "png" : "jpeg";
-        pageImageUrl = `data:image/${ext};base64,${imgBuffer.toString("base64")}`;
-      } catch (e) {
-        pageImageUrl = "";
-      }
-    }
+    const activeVisualScene =
+      visualSceneContext ||
+      pageData?.avatar_comment ||
+      "";
+
+    // Text visual clues from avatar_comment are passed in visualSceneContext,
+    // avoiding large base64 image payloads that hit Groq's 7,000 ITPM rate limit.
+    const pageImageUrl = "";
          
     const initialState = {
-      storyPageText: storyPageText || pageData?.content || pageData?.text || "No context provided.",
+      storyPageText: storyPageText || pageData?.page_text || pageData?.content || pageData?.text || "No context provided.",
       questionText: activeQuestion,
+      expectedEmotion: activeExpectedEmotion,
+      visualSceneContext: activeVisualScene,
       pageImageUrl: pageImageUrl,
       conversationSummary: previousSummary,
       transcript: transcript,
     };
 
-    const graphResult = await graph.invoke(initialState);
+    let graphResult = null;
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        graphResult = await graph.invoke(initialState);
+        break;
+      } catch (err) {
+        attempts++;
+        const isRateLimit = err?.status === 429 || String(err).includes("rate_limit") || String(err).includes("429");
+        if (isRateLimit && attempts < 3) {
+          console.warn(`Groq rate limit encountered. Retrying in ${attempts * 4} seconds...`);
+          await new Promise((r) => setTimeout(r, attempts * 4000));
+        } else {
+          throw err;
+        }
+      }
+    }
     
     console.log("Generating Orpheus Audio...");
     const audioBase64 = await generateSpeech(graphResult.response);
@@ -90,6 +115,10 @@ export const analyzeReading = async (req, res) => {
       success: true,
       transcript: transcript,
       mstDetected: graphResult.mstDetected,
+      isEmotionCorrect: graphResult.isEmotionCorrect,
+      emotionMatch: graphResult.emotionMatch,
+      detectedEmotion: graphResult.detectedEmotion,
+      missingNuance: graphResult.missingNuance,
       childResponse: displayText,
       audioBase64: audioBase64
     });
