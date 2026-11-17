@@ -1,141 +1,231 @@
 # IROP Reading
 
-A shared reading tool for studying **Mental State Talk (MST)** during adult-child
-reading sessions: a reader (e.g. an older adult participant) reads a picture book
-page by page alongside a child-like avatar. At points in the story, the app asks
-an MST question — what a character is thinking, feeling, believing, or intending
-— the reader answers by typing or speaking, and an AI pipeline analyzes the
-answer, detects whether MST is present, and has the avatar reply in character
-(with a synthesized child voice).
+A research-informed shared reading web application for studying **Mental State Talk (MST)** during intergenerational adult-child reading sessions. 
 
-This is a monorepo containing both halves of the app, merged via `git subtree`
-with full commit history preserved from both original repos:
+An adult reader (e.g. an older adult participant) reads an illustrated picture book alongside a 5-year-old child avatar named **Alice**. At key moments in the story, the app pauses for a dialogic reading prompt exploring what a character is feeling, thinking, believing, or intending. The reader responds by typing or speaking through their microphone. An AI pipeline evaluates emotional accuracy and Mental State Talk, and Alice replies in character using a synthesized child voice (via Orpheus TTS). If the reader names an incorrect emotion or misses MST, Alice gently questions and redirects them, and asks a broader personal follow-up question connecting the story's theme to the reader's own life.
 
+This monorepo contains both halves of the system:
 ```
-irop-reading/
-  backend/   Express API + Supabase (Postgres) + LangGraph/Groq AI pipeline
-  frontend/  React + Vite single-page app
+IROP_BOOK/
+├── backend/    # Express API + Supabase (PostgreSQL) + LangGraph/Groq AI pipeline
+└── frontend/   # React + Vite single-page application
 ```
 
-Each half has its own detailed README — start there once you know which side
-you're working on:
+---
 
-- [backend/README.md](backend/README.md)
-- [frontend/README.md](frontend/README.md)
+## Prerequisites
 
-## How the pieces fit together
+Before running the application, make sure you have:
+1. **Node.js** (v18 or higher recommended). Check with `node -v`.
+2. **Groq API Key**: Needed for Whisper transcription, Qwen LLM analysis, and Orpheus text-to-speech. Get one at [console.groq.com](https://console.groq.com/).
+3. **Supabase Project**: Provides the PostgreSQL database storing stories, pages, reading sessions, and MST logs. Get credentials at [supabase.com](https://supabase.com/).
 
+---
+
+## Quick Start (How to Run)
+
+Running the application requires two terminal windows: one for the backend API and one for the frontend client.
+
+### Step 1: Configure Environment Variables
+
+Create a `.env` file inside the `backend/` folder (or copy from `backend/.env.example`):
+
+**File location:** `backend/.env`
+```env
+GROQ_API_KEY=gsk_your_groq_api_key_here
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_KEY=your_supabase_service_role_key_here
+PORT=3000
 ```
-React app (Vite dev server, :5173)
-   |  fetch() calls to http://localhost:3000/api
-   v
-Express API (backend/, :3000)
-   |                              \
-   | Supabase client               \ Groq SDK
-   v                                v
-Supabase (Postgres)          Whisper (transcription)
-  stories                    LLM via LangGraph (MST detection,
-  story_pages                  child response, summary)
-  sessions                   TTS (child-voice audio reply)
-  session_logs
-```
 
-The frontend never talks to Supabase or Groq directly — everything goes through
-the Express API.
+> [!IMPORTANT]
+> Use the Supabase **service_role key** (or anon key with appropriate table permissions) so the backend can write session logs and fetch story pages.
 
-## Quick start (running the whole app locally)
+---
 
-You need two terminals, plus a Supabase project and a Groq API key (ask
-whoever owns those, or see [backend/README.md](backend/README.md) for what to
-provision).
+### Step 2: Database Setup (Supabase)
 
-Before starting the backend, make sure there is a [backend/.env] file with the required environment variables and api keys (if not, create a new file). 
+If you are connecting to a new Supabase project or updating existing tables:
 
-```bash
-# Terminal 1 — backend
+1. Open your project dashboard at [supabase.com](https://supabase.com) and go to the **SQL Editor**.
+2. Run the SQL script found in [tables.txt](tables.txt) to seed the story *"There's an Alligator Under My Bed"* and all 14 parts (27 pages).
+3. Ensure the `session_logs` table includes the dedicated tracking columns by running:
+   ```sql
+   ALTER TABLE public.session_logs
+   ADD COLUMN IF NOT EXISTS question_text TEXT,
+   ADD COLUMN IF NOT EXISTS emotion_match TEXT,
+   ADD COLUMN IF NOT EXISTS follow_up_question TEXT;
+   ```
+   *(Note: If these columns are omitted, the backend automatically preserves all metadata within `mst_analysis` without throwing errors).*
+
+---
+
+### Step 3: Start the Backend Server
+
+Open **Terminal 1**:
+
+```powershell
+# Windows PowerShell
 cd backend
 npm install
 npm start
-# → backend running at http://localhost:3000
-# → API logs: http://localhost:3000/api/logs
+```
 
-# Terminal 2 — frontend
+```bash
+# macOS / Linux
+cd backend
+npm install
+npm start
+```
+
+You should see:
+```text
+Server is running!
+- View DB logs: http://localhost:3000/api/logs
+```
+
+---
+
+### Step 4: Start the Frontend Application
+
+Open **Terminal 2**:
+
+```powershell
+# Windows PowerShell
 cd frontend
 npm install
 npm run dev
-# → http://localhost:5173
 ```
 
-Open `http://localhost:5173` to use the application.
-
-The frontend's API base URL is currently hardcoded to `http://localhost:3000/api` in
-[frontend/src/utils/apiClient.js](frontend/src/utils/apiClient.js) — there's no frontend
-`.env` configuration for it yet, so if you run the backend on a different port or host,
-you'll need to change that constant directly.
-
-## App flow
-
-```
-Welcome → Session Setup (login) → Choose a Story → Story Preview → Reading → Finished
+```bash
+# macOS / Linux
+cd frontend
+npm install
+npm run dev
 ```
 
-The Reading screen is where most of the interesting behavior lives: story page
-display, the avatar's comment, the MST question/answer/reaction cycle (with
-audio recording), a collapsible transcript drawer, and pause/save.
+You should see:
+```text
+VITE v8.x.x  ready in ... ms
 
-## Tech stack
+➜  Local:   http://localhost:5173/
+➜  Network: use --host to expose
+```
 
-| | |
+---
+
+### Step 5: Open the App in Your Browser
+
+1. Navigate to **[http://localhost:5173](http://localhost:5173)** in Google Chrome or Microsoft Edge.
+2. Grant microphone permissions if prompted (required for audio recording).
+3. **Session Setup**: Enter any **Session Code** (e.g. `TEST101`) and **Participant ID** (e.g. `P01`), then click **Start Reading**.
+4. **Choose Story**: Click on *"There's an Alligator Under My Bed"* and click **Start Story**.
+5. **Reading Flow**:
+   - Read the double-page spread. Alice will comment on the illustration.
+   - Click **Continue** (top right) to open the dialogic question.
+   - Speak your answer by clicking the **Microphone** icon, or type into the text box and press **Enter** or the **Send** button.
+   - Alice will speak her reaction! If a follow-up question is asked, you can share a personal experience or click **Continue** to move to the next page.
+
+---
+
+## App Flow & Dialogic Reading Pipeline
+
+```
+Welcome 
+   └── Session Setup (Login with Session Code & Participant ID)
+          └── Choose Story 
+                 └── Story Preview 
+                        └── Reading Spread (Pages 1 to 14)
+                               ├── Avatar Comment
+                               ├── Mental State Talk Question
+                               ├── Speech / Text Answer Submission
+                               ├── Child Reaction (Orpheus TTS)
+                               └── Thematic Personal Follow-Up (if partial/incorrect)
+                                      └── Finished Screen
+```
+
+### Dialogic Reading & MST Analysis
+The LangGraph pipeline evaluates each response against developmental psychology coding criteria:
+1. **Mental State Talk (MST)**: Detects feelings (*scared, nervous, proud*), thoughts (*think, believe, pretend, wonder*), and intentions (*want, need, try*).
+2. **Emotional Match (4-Way)**:
+   - `CORRECT`: Matches the character's primary emotional reality. Alice celebrates warmly.
+   - `PARTIAL`: Mixed feelings (e.g., proud of a clever plan, but still cautious of the alligator). Alice validates and points out the other feeling.
+   - `INCORRECT`: Contradicts the story (e.g., character is terrified, but reader says "he is happy"). Alice follows a 3-step sequence:
+     1. *Acknowledge* ("Happy?")
+     2. *Question* ("Are you sure?")
+     3. *State with clue* ("Look at his face, he looks super worried!")
+   - `NONE`: Missed feelings completely (physical description only). Alice reacts to the action and asks how the character feels.
+3. **Personal Follow-Up Questions (Distancing Prompts)**:
+   - When the response is `INCORRECT`, `PARTIAL`, or `NONE`, Alice asks a broader personal question connecting the page's theme to the reader's life (e.g., *"Did you ever have a scary shadow in your room when you were little?"*).
+4. **Session Logging**:
+   - Every exchange is recorded in Supabase `session_logs` (`question_text`, `transcript`, `mst_detected`, `emotion_match`, `follow_up_question`, `child_response`, `conversation_summary`).
+   - View live logs anytime at `http://localhost:3000/api/logs`.
+
+---
+
+## Architecture & System Overview
+
+```
+React App (Vite dev server, :5173)
+   │  fetch() multipart/JSON requests
+   ▼
+Express API (backend/, :3000)
+   ├── Supabase Client (PostgreSQL)
+   │     ├── stories
+   │     ├── story_pages
+   │     ├── sessions
+   │     └── session_logs (MST research data)
+   └── Groq SDK Pipeline (LangGraph StateGraph)
+         ├── Whisper (STT: audio transcription)
+         ├── Qwen 2.5 32B (MST detection & response generation)
+         └── Orpheus v1 (TTS: child-voice audio reply)
+```
+
+---
+
+## Troubleshooting & FAQ
+
+#### 1. `Something went wrong while processing your response`
+- **Check Backend Logs**: Look at the terminal running `npm start`.
+- **Groq API Key**: Verify `GROQ_API_KEY` in `backend/.env` is valid and has remaining rate limits.
+- **Supabase Credentials**: Verify `SUPABASE_URL` and `SUPABASE_KEY` are correct.
+- If Groq rate limits are exceeded (HTTP 429), the backend automatically retries with exponential backoff.
+
+#### 2. `Port 3000 or 5173 is already in use`
+- On Windows, find and kill the process:
+  ```powershell
+  # Check what process is on port 3000
+  netstat -ano | findstr :3000
+  # Kill by PID (replace <PID> with the number from the rightmost column)
+  taskkill /PID <PID> /F
+  ```
+- Or specify an alternate port in `backend/.env` with `PORT=3001` (note: update `BASE_URL` in `frontend/src/utils/apiClient.js` if changing the backend port).
+
+#### 3. Microphone is not recording
+- Ensure your browser has granted microphone access to `http://localhost:5173`.
+- In Chrome: Click the tune/lock icon in the URL address bar → **Site Settings** → set **Microphone** to **Allow**.
+- You can always type your answer in the text box as an alternative to audio recording.
+
+#### 4. Where are reading session logs stored?
+- View raw JSON logs in the browser at **`http://localhost:3000/api/logs`**.
+- Or view and export logs directly in your Supabase dashboard under Table Editor → **`session_logs`**.
+
+---
+
+## Tech Stack Details
+
+| Layer | Technologies |
 |---|---|
-| Frontend | React 19, Vite, plain CSS (no Tailwind/component library), no router (manual screen-state switch in `App.jsx`), no global state library |
-| Backend | Node.js, Express 5, Supabase JS client, Multer (audio upload), Zod (structured LLM output) |
-| AI / data | LangGraph (state machine orchestrating LLM calls), Groq (Whisper transcription, chat LLM, TTS), Supabase Postgres |
+| **Frontend** | React 19, Vite, Lucide Icons, Plain CSS |
+| **Backend** | Node.js (ESM), Express 5, Multer (audio file uploads), Supabase JS Client |
+| **AI Orchestration** | LangGraph (`@langchain/langgraph`), `@langchain/core`, ChatGroq |
+| **AI Models (Groq)** | `whisper-large-v3` (Speech-to-Text), `qwen/qwen3.8-27b` (MST detection & chat), `canopylabs/orpheus-v1-english` (TTS) |
+| **Database** | Supabase (PostgreSQL) |
 
-## Current status
+---
 
-Both halves are wired together end-to-end: session login, story listing, page
-fetching, progress tracking, and MST answer analysis all hit the real backend
-and a real Supabase database — this is no longer a mock-data prototype. There
-is currently one seeded story ("There's an Alligator Under My Bed").
+## Sub-Package Documentation
 
-## Known gaps / things to be aware of
-
-- **No tests.** Neither half has a test suite yet.
-- **No DB migrations.** The Supabase schema is managed by hand (SQL editor /
-  table editor) — there's no migrations folder or schema-as-code.
-- **No env-based API URL config on the frontend** (see Quick start above).
-- **One MST exchange per page.** The reader gets exactly one question → one
-  answer → one reaction per page; see the roadmap below.
-- **Bottom nav bar on the story selection screen is non-functional** (Search /
-  Saved / History / Settings buttons don't do anything yet).
-- Only one story is currently seeded in `story_pages`.
-
-## Roadmap / future implementation
-
-Not in priority order — pick based on what the current phase of the project needs:
-
-1. **Multi-turn MST conversation per page.** Currently a reader gets one
-   question, one answer, one avatar reaction, then must move on. Allow more
-   than one round of back-and-forth at a page before continuing — this likely
-   means changes to `MSTPrompt.jsx`'s submit/continue flow on the frontend and
-   to how `session_logs` rows are structured/queried on the backend (currently
-   one row per submission, keyed by `session_id` + `page_id`).
-2. **TTS for `avatar_comment`.** Right now only the AI-generated MST reaction
-   gets synthesized to speech (via `ttsService.js`); the avatar's per-page
-   comment (`avatar_comment`, shown before the MST prompt) is text-only.
-3. **Experiment with a more natural/customized TTS voice.** The current setup
-   uses Groq's `canopylabs/orpheus-v1-english` model with a fixed voice
-   ("hannah") — worth exploring voice options, tuning, or alternative
-   providers for a more natural or more clearly "child-like" result.
-4. **Build out the bottom nav bar**: Search, Saved, History, and Settings on
-   the story selection screen currently render but do nothing — each needs a
-   real screen and backend support (e.g. a "history" endpoint over
-   `session_logs`, a "saved stories" concept, user-configurable settings).
-5. **Add more books.** Only one story is seeded. Adding another means: story
-   page images in `frontend/public/images/`, a `stories` row, and
-   `story_pages` rows (see `backend/README.md`'s data model section for the
-   exact columns) — plus, if the book is a copyrighted published work like the
-   current one, checking on usage/licensing before shipping it anywhere public.
-
-See each sub-README for additional lower-level gaps and roadmap items specific
-to that half.
+For in-depth architecture details specific to each half of the repository:
+- **Backend Deep-Dive**: [backend/README.md](backend/README.md)
+- **Frontend Deep-Dive**: [frontend/README.md](frontend/README.md)
