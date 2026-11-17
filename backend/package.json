@@ -1,6 +1,7 @@
 {"type":"module",
   "scripts":{
-    "start": "node index.js"
+    "start": "node index.js",
+    "add-book": "node scripts/add_book.js"
   },
   "dependencies": {
     "@langchain/core": "^1.2.1",

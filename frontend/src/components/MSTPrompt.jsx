@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mic, Square, ArrowLeft, Send } from "lucide-react";
+import { Mic, Square, ArrowLeft, Send, AlertCircle, X } from "lucide-react";
 import { useAudioRecorder } from "../hooks/useAudioRecorder";
 import { apiClient } from "../utils/apiClient";
 import { useSession } from "../hooks/useSession";
@@ -11,13 +11,36 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
   const [aiReaction, setAiReaction] = useState("");
   const [followUpQuestion, setFollowUpQuestion] = useState(null);
   const [isFollowUpAnswered, setIsFollowUpAnswered] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const { sessionId } = useSession();
   const { isRecording, audioBlob, startRecording, stopRecording, clearAudio } = useAudioRecorder();
 
+  /**
+   * Plays the audio synthesized by Orpheus, applying pitch and cadence shifting
+   * so Alice's voice sounds authentically childlike (higher pitch & lively pacing).
+   */
+  const playChildVoiceAudio = (base64Wav) => {
+    try {
+      const audio = new Audio("data:audio/wav;base64," + base64Wav);
+      // Disabling pitch preservation and setting playbackRate to 1.18 raises
+      // the fundamental frequency by ~2.8 semitones, producing a bright 5-year-old child tone.
+      audio.preservesPitch = false;
+      audio.mozPreservesPitch = false;
+      audio.webkitPreservesPitch = false;
+      audio.playbackRate = 1.18;
+      audio.play().catch((err) => {
+        console.warn("Audio autoplay blocked by browser policy:", err);
+      });
+    } catch (err) {
+      console.warn("Error playing child voice audio:", err);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!answer.trim() && !audioBlob) return;
     setIsProcessing(true);
+    setErrorMessage("");
 
     const isAnsweringFollowUp = Boolean(followUpQuestion && !isFollowUpAnswered);
 
@@ -43,8 +66,7 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
         setAiReaction(response.childResponse);
         
         if (response.audioBase64) {
-          const audio = new Audio("data:audio/wav;base64," + response.audioBase64);
-          audio.play();
+          playChildVoiceAudio(response.audioBase64);
         }
 
         if (isAnsweringFollowUp) {
@@ -62,7 +84,7 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
       }
     } catch (err) {
       console.error("Failed to analyze reading:", err);
-      alert("Something went wrong while processing your response.");
+      setErrorMessage("Something went wrong while processing your response. Please try sending again.");
     } finally {
       setIsProcessing(false);
       clearAudio();
@@ -81,18 +103,40 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
     ? followUpQuestion
     : prompt;
 
-  // Determine if input is active (either before first submission or while answering follow-up)
   const showInput = !submitted;
 
   return (
     <>
+      {errorMessage && (
+        <div className="mst-error-toast" role="alert">
+          <div className="mst-error-toast-content">
+            <AlertCircle size={18} className="mst-error-icon" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            className="mst-error-toast-close"
+            onClick={() => setErrorMessage("")}
+            aria-label="Dismiss error"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       <div className="mst-question-wrapper">
         <div className="mst-question-panel">
-          {followUpQuestion && !isFollowUpAnswered && (
-            <span style={{ display: "block", fontSize: "15px", color: "#6c757d", fontWeight: "bold", marginBottom: "6px" }}>
-              Alice asks you:
-            </span>
-          )}
+          <div className="mst-badge-row">
+            {followUpQuestion && !isFollowUpAnswered ? (
+              <span className="mst-question-badge mst-question-badge-followup">
+                ✨ Alice asks you
+              </span>
+            ) : (
+              <span className="mst-question-badge">
+                📖 Question for you
+              </span>
+            )}
+          </div>
           <p className="mst-question">{displayedQuestion}</p>
         </div>
 
@@ -116,36 +160,35 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
       </div>
 
       <div className="mst-bottom-row">
-        <img
-          className="avatar-video"
-          src="/images/Avatar_Image_nobg.png"
-          alt="Reading companion avatar"
-        />
+        <div className="avatar-frame">
+          <img
+            className="avatar-video"
+            src="/images/Avatar_Image_nobg.png"
+            alt="Reading companion avatar"
+          />
+        </div>
 
         {showInput ? (
           <div className="mst-answer-panel">
             {followUpQuestion && !isFollowUpAnswered && aiReaction && (
-              <div
-                style={{
-                  marginBottom: "10px",
-                  fontSize: "15px",
-                  lineHeight: "1.35",
-                  color: "#333",
-                  background: "#fdf8f0",
-                  padding: "8px 14px",
-                  borderRadius: "10px",
-                  borderLeft: "4px solid #e8c28f",
-                }}
-              >
-                <strong>Alice:</strong> {aiReaction}
+              <div className="mst-avatar-quote-bubble">
+                <span className="mst-quote-author">👧 Alice:</span>
+                <p className="mst-quote-text">{aiReaction}</p>
               </div>
             )}
-            <label htmlFor="mst-answer">
-              {isProcessing
-                ? "The child is thinking..."
-                : followUpQuestion
-                ? "Share your personal thoughts with Alice (or click Continue):"
-                : "Type or say your answer:"}
+            <label htmlFor="mst-answer" className="mst-answer-label">
+              {isProcessing ? (
+                <span className="mst-thinking-indicator">
+                  <span className="mst-thinking-dot"></span>
+                  <span className="mst-thinking-dot"></span>
+                  <span className="mst-thinking-dot"></span>
+                  Alice is listening and thinking...
+                </span>
+              ) : followUpQuestion ? (
+                "Share your personal thoughts with Alice (or click Continue):"
+              ) : (
+                "Type or say your answer:"
+              )}
             </label>
             <div className="mst-answer-row">
               <input
@@ -153,12 +196,12 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                 type="text"
                 placeholder={
                   isRecording
-                    ? "Recording audio..."
+                    ? "Recording audio... click square when done."
                     : audioBlob
-                    ? "Audio recorded. Press send."
+                    ? "Audio recorded. Click send!"
                     : followUpQuestion
                     ? "Type your experience here..."
-                    : ""
+                    : "Type what you think here..."
                 }
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
@@ -166,16 +209,16 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                 disabled={isRecording || isProcessing || !!audioBlob}
               />
               
-              {/* Dynamic button logic based on recording/typing state */}
               {audioBlob || answer.trim().length > 0 ? (
                 <button
                   type="button"
-                  className="mst-mic-btn"
+                  className="mst-send-btn"
                   onClick={handleSubmit}
                   disabled={isProcessing}
                   title="Send Answer"
                 >
-                  <Send size={20} aria-hidden="true" />
+                  <Send size={18} aria-hidden="true" />
+                  <span>Send</span>
                 </button>
               ) : (
                 <button
@@ -183,15 +226,16 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                   className={`mst-mic-btn ${isRecording ? "recording" : ""}`}
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={isProcessing}
-                  title={isRecording ? "Stop Recording" : "Start Recording"}
+                  title={isRecording ? "Stop Recording" : "Start Recording (Voice)"}
                 >
-                  {isRecording ? <Square size={20} aria-hidden="true" /> : <Mic size={20} aria-hidden="true" />}
+                  {isRecording ? <Square size={18} aria-hidden="true" /> : <Mic size={20} aria-hidden="true" />}
                 </button>
               )}
             </div>
           </div>
         ) : (
           <div className="mst-reaction-panel">
+            <span className="mst-reaction-badge">👧 Alice says:</span>
             <p>{aiReaction || reaction}</p> 
           </div>
         )}

@@ -1,0 +1,20 @@
+{
+  "title": "The Little Blue Engine",
+  "author": "Watty Piper",
+  "genre": "Children",
+  "estimatedTime": "8 mins",
+  "pages": [
+    {
+      "page_number": 1,
+      "page_text": "Chug, chug, chug. Puff, puff, puff. Ding-dong, ding-dong. The little train rumbled over the tracks. She was a happy little train, carrying toys and good food for all the girls and boys on the other side of the mountain.",
+      "left_image_url": "/images/alligator-page-1.png",
+      "right_image_url": "/images/alligator-page-2.png"
+    },
+    {
+      "page_number": 2,
+      "page_text": "Suddenly she stopped with a jerk! She simply could not go another inch. Her wheels would not turn. 'What will become of us?' cried all the dolls and toy animals, worried that the children wouldn't get their toys.",
+      "left_image_url": "/images/alligator-page-3.png",
+      "right_image_url": "/images/alligator-page-4.png"
+    }
+  ]
+}
