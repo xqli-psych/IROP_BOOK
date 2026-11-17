@@ -1,6 +1,7 @@
 {"type":"module",
   "scripts":{
     "start": "node index.js",
+    "seed": "node scripts/seed_alligator_14_parts.js",
     "add-book": "node scripts/add_book.js"
   },
   "dependencies": {
