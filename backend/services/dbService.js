@@ -65,7 +65,7 @@ export async function getLatestSummary(sessionId) {
   return data ? data.conversation_summary : "Just started reading chapter 1.";
 }
 
-// Save the reading log with relational IDs
+// Save the reading log with relational IDs, questions, emotion match, MST, and follow-ups
 export async function saveSessionLog(graphResult, sessionId, pageId) {
   // Denormalize participation_id from the session so every log row / CSV
   // export carries it without a join.
@@ -77,29 +77,68 @@ export async function saveSessionLog(graphResult, sessionId, pageId) {
 
   if (sessionError) throw sessionError;
 
-  const insertPayload = {
+  // Format rich structured analysis so that even if dedicated columns are pending migration,
+  // all details (question, emotion match, MST status, follow-up) are permanently logged.
+  const structuredAnalysis = [
+    `[Question]: ${graphResult.questionText || "N/A"}`,
+    `[Emotion Match]: ${graphResult.emotionMatch || "N/A"}`,
+    `[MST Detected]: ${graphResult.mstDetected ? "YES" : "NO"}`,
+    `[Detected Emotion]: ${graphResult.detectedEmotion || "none"}`,
+    graphResult.missingNuance ? `[Missing Nuance]: ${graphResult.missingNuance}` : null,
+    graphResult.followUpQuestion ? `[Follow-Up Question]: ${graphResult.followUpQuestion}` : null,
+    `[Analysis]: ${graphResult.mstAnalysis || "N/A"}`,
+  ].filter(Boolean).join("\n");
+
+  const fullPayload = {
     session_id: sessionId,
     page_id: pageId,
     participation_id: session?.participation_id ?? null,
     story_page_text: graphResult.storyPageText,
     transcript: graphResult.transcript,
     mst_detected: graphResult.mstDetected,
-    mst_analysis: graphResult.mstAnalysis,
+    mst_analysis: structuredAnalysis,
     child_response: graphResult.response,
     conversation_summary: graphResult.conversationSummary,
+    question_text: graphResult.questionText,
+    emotion_match: graphResult.emotionMatch,
+    follow_up_question: graphResult.followUpQuestion || null,
   };
-
-  // DIAGNOSTIC LOG: Check the terminal to see if any of these are 'undefined'
-  //console.log("Supabase Insert Payload:", insertPayload);
 
   const { data, error } = await supabase
     .from("session_logs")
-    .insert([insertPayload]);
+    .insert([fullPayload]);
 
   if (error) {
+    // If dedicated columns (question_text, emotion_match, follow_up_question) do not exist yet in Supabase schema
+    if (error.code === "PGRST204") {
+      console.warn("Notice: Dedicated columns not found in session_logs (PGRST204). Falling back to base columns with structured mst_analysis.");
+      const basePayload = {
+        session_id: sessionId,
+        page_id: pageId,
+        participation_id: session?.participation_id ?? null,
+        story_page_text: graphResult.storyPageText,
+        transcript: graphResult.transcript,
+        mst_detected: graphResult.mstDetected,
+        mst_analysis: structuredAnalysis,
+        child_response: graphResult.response,
+        conversation_summary: graphResult.conversationSummary,
+      };
+
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("session_logs")
+        .insert([basePayload]);
+
+      if (fallbackError) {
+        console.error("Error saving fallback to Supabase:", fallbackError);
+        throw fallbackError;
+      }
+      return fallbackData;
+    }
+
     console.error("Error saving to Supabase:", error);
     throw error;
   }
+
   return data;
 }
 

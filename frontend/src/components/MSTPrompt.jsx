@@ -9,6 +9,8 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
   const [submitted, setSubmitted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiReaction, setAiReaction] = useState("");
+  const [followUpQuestion, setFollowUpQuestion] = useState(null);
+  const [isFollowUpAnswered, setIsFollowUpAnswered] = useState(false);
 
   const { sessionId } = useSession();
   const { isRecording, audioBlob, startRecording, stopRecording, clearAudio } = useAudioRecorder();
@@ -17,13 +19,16 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
     if (!answer.trim() && !audioBlob) return;
     setIsProcessing(true);
 
+    const isAnsweringFollowUp = Boolean(followUpQuestion && !isFollowUpAnswered);
+
     const formData = new FormData();
     formData.append("sessionId", sessionId);
     formData.append("pageId", pageId);
     formData.append("storyPageText", storyPageText);
-    formData.append("questionText", prompt || "");
+    formData.append("questionText", isAnsweringFollowUp ? followUpQuestion : (prompt || ""));
     formData.append("expectedEmotion", reaction || "");
     formData.append("visualSceneContext", avatarComment || "");
+    formData.append("isFollowUp", isAnsweringFollowUp ? "true" : "false");
 
     if (audioBlob) {
       formData.append("audioFile", audioBlob, "recording.webm");
@@ -36,11 +41,23 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
       
       if (response.success) {
         setAiReaction(response.childResponse);
-        setSubmitted(true);
         
         if (response.audioBase64) {
           const audio = new Audio("data:audio/wav;base64," + response.audioBase64);
           audio.play();
+        }
+
+        if (isAnsweringFollowUp) {
+          // Finished answering the personal follow-up question
+          setIsFollowUpAnswered(true);
+          setSubmitted(true);
+        } else if (response.followUpQuestion) {
+          // Received a new follow-up question because answer was incorrect/partial/no-mst
+          setFollowUpQuestion(response.followUpQuestion);
+          setAnswer(""); // clear input for the follow-up answer
+        } else {
+          // Correct answer: no follow-up needed
+          setSubmitted(true);
         }
       }
     } catch (err) {
@@ -59,15 +76,28 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
     }
   };
 
+  // Determine active question to display in the top banner
+  const displayedQuestion = (followUpQuestion && !isFollowUpAnswered)
+    ? followUpQuestion
+    : prompt;
+
+  // Determine if input is active (either before first submission or while answering follow-up)
+  const showInput = !submitted;
+
   return (
     <>
       <div className="mst-question-wrapper">
         <div className="mst-question-panel">
-          <p className="mst-question">{prompt}</p>
+          {followUpQuestion && !isFollowUpAnswered && (
+            <span style={{ display: "block", fontSize: "15px", color: "#6c757d", fontWeight: "bold", marginBottom: "6px" }}>
+              Alice asks you:
+            </span>
+          )}
+          <p className="mst-question">{displayedQuestion}</p>
         </div>
 
         <div className="mst-question-actions">
-          {submitted ? (
+          {submitted || followUpQuestion ? (
             <button className="mst-continue-btn" onClick={onContinue} disabled={isProcessing}>
               Continue
             </button>
@@ -92,21 +122,44 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
           alt="Reading companion avatar"
         />
 
-        {submitted ? (
-          <div className="mst-reaction-panel">
-            {/* Fallback to original reaction prop if the AI fails to generate one */}
-            <p>{aiReaction || reaction}</p> 
-          </div>
-        ) : (
+        {showInput ? (
           <div className="mst-answer-panel">
+            {followUpQuestion && !isFollowUpAnswered && aiReaction && (
+              <div
+                style={{
+                  marginBottom: "10px",
+                  fontSize: "15px",
+                  lineHeight: "1.35",
+                  color: "#333",
+                  background: "#fdf8f0",
+                  padding: "8px 14px",
+                  borderRadius: "10px",
+                  borderLeft: "4px solid #e8c28f",
+                }}
+              >
+                <strong>Alice:</strong> {aiReaction}
+              </div>
+            )}
             <label htmlFor="mst-answer">
-              {isProcessing ? "The child is thinking..." : "Type or say your answer:"}
+              {isProcessing
+                ? "The child is thinking..."
+                : followUpQuestion
+                ? "Share your personal thoughts with Alice (or click Continue):"
+                : "Type or say your answer:"}
             </label>
             <div className="mst-answer-row">
               <input
                 id="mst-answer"
                 type="text"
-                placeholder={isRecording ? "Recording audio..." : audioBlob ? "Audio recorded. Press send." : ""}
+                placeholder={
+                  isRecording
+                    ? "Recording audio..."
+                    : audioBlob
+                    ? "Audio recorded. Press send."
+                    : followUpQuestion
+                    ? "Type your experience here..."
+                    : ""
+                }
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
                 onKeyDown={handleKeyDown}
@@ -136,6 +189,10 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                 </button>
               )}
             </div>
+          </div>
+        ) : (
+          <div className="mst-reaction-panel">
+            <p>{aiReaction || reaction}</p> 
           </div>
         )}
       </div>

@@ -10,7 +10,7 @@ export const analyzeReading = async (req, res) => {
   let uploadedFilePath = null;
   
   try {
-    // Extract new relational IDs from the frontend request
+    // Extract relational IDs and contextual parameters from the frontend request
     const {
       storyPageText,
       sessionId,
@@ -19,6 +19,7 @@ export const analyzeReading = async (req, res) => {
       expectedEmotion,
       expectedResponse,
       visualSceneContext,
+      isFollowUp,
     } = req.body;
     
     if (!sessionId || !pageId) {
@@ -68,6 +69,8 @@ export const analyzeReading = async (req, res) => {
     // Text visual clues from avatar_comment are passed in visualSceneContext,
     // avoiding large base64 image payloads that hit Groq's 7,000 ITPM rate limit.
     const pageImageUrl = "";
+    
+    const isFollowUpBool = isFollowUp === "true" || isFollowUp === true;
          
     const initialState = {
       storyPageText: storyPageText || pageData?.page_text || pageData?.content || pageData?.text || "No context provided.",
@@ -77,6 +80,7 @@ export const analyzeReading = async (req, res) => {
       pageImageUrl: pageImageUrl,
       conversationSummary: previousSummary,
       transcript: transcript,
+      isFollowUp: isFollowUpBool,
     };
 
     let graphResult = null;
@@ -103,7 +107,7 @@ export const analyzeReading = async (req, res) => {
     const displayText = graphResult.response.replace(/\[.*?\]\s*/g, "").trim();
     graphResult.response = displayText;
 
-    // Save log using the new relational parameters
+    // Save log using the new relational parameters and structured MST analysis
     await saveSessionLog(graphResult, sessionId, pageId);
 
     // Clean up file asynchronously to prevent blocking the event loop
@@ -120,6 +124,7 @@ export const analyzeReading = async (req, res) => {
       detectedEmotion: graphResult.detectedEmotion,
       missingNuance: graphResult.missingNuance,
       childResponse: displayText,
+      followUpQuestion: graphResult.followUpQuestion || null,
       audioBase64: audioBase64
     });
 

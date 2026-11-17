@@ -14,5 +14,7 @@ export const GraphState = Annotation.Root({
   detectedEmotion: Annotation,
   missingNuance: Annotation,
   mstAnalysis: Annotation,         
-  response: Annotation,         
+  response: Annotation,
+  followUpQuestion: Annotation,
+  isFollowUp: Annotation,
 });
