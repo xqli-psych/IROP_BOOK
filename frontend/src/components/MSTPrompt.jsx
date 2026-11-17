@@ -23,8 +23,6 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
   const playChildVoiceAudio = (base64Wav) => {
     try {
       const audio = new Audio("data:audio/wav;base64," + base64Wav);
-      // Disabling pitch preservation and setting playbackRate to 1.18 raises
-      // the fundamental frequency by ~2.8 semitones, producing a bright 5-year-old child tone.
       audio.preservesPitch = false;
       audio.mozPreservesPitch = false;
       audio.webkitPreservesPitch = false;
@@ -70,13 +68,13 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
         }
 
         if (isAnsweringFollowUp) {
-          // Finished answering the personal follow-up question
+          // Finished answering the second question
           setIsFollowUpAnswered(true);
           setSubmitted(true);
         } else if (response.followUpQuestion) {
-          // Received a new follow-up question because answer was incorrect/partial/no-mst
+          // Present the second question directly
           setFollowUpQuestion(response.followUpQuestion);
-          setAnswer(""); // clear input for the follow-up answer
+          setAnswer(""); // clear input for second answer
         } else {
           // Correct answer: no follow-up needed
           setSubmitted(true);
@@ -127,15 +125,9 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
       <div className="mst-question-wrapper">
         <div className="mst-question-panel">
           <div className="mst-badge-row">
-            {followUpQuestion && !isFollowUpAnswered ? (
-              <span className="mst-question-badge mst-question-badge-followup">
-                Alice asks you
-              </span>
-            ) : (
-              <span className="mst-question-badge">
-                Question for you
-              </span>
-            )}
+            <span className="mst-question-badge">
+              Question for you
+            </span>
           </div>
           <p className="mst-question">{displayedQuestion}</p>
         </div>
@@ -170,12 +162,6 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
 
         {showInput ? (
           <div className="mst-answer-panel">
-            {followUpQuestion && !isFollowUpAnswered && aiReaction && (
-              <div className="mst-avatar-quote-bubble">
-                <span className="mst-quote-author">Alice:</span>
-                <p className="mst-quote-text">{aiReaction}</p>
-              </div>
-            )}
             <label htmlFor="mst-answer" className="mst-answer-label">
               {isProcessing ? (
                 <span className="mst-thinking-indicator">
@@ -184,8 +170,6 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                   <span className="mst-thinking-dot"></span>
                   Alice is listening and thinking...
                 </span>
-              ) : followUpQuestion ? (
-                "Share your personal thoughts with Alice (or click Continue):"
               ) : (
                 "Type or say your answer:"
               )}
@@ -199,9 +183,7 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                     ? "Recording audio... click square when done."
                     : audioBlob
                     ? "Audio recorded. Click send!"
-                    : followUpQuestion
-                    ? "Type your experience here..."
-                    : "Type what you think here..."
+                    : "Type your answer here..."
                 }
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}

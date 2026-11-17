@@ -20,16 +20,18 @@ function ReadingPage({ story, onFinish, onExit }) {
   
   const { sessionId } = useSession();
   const commentAudioRef = useRef(null);
+  const lastPlayedPageRef = useRef(null);
 
   // The actual database page number is pageIndex + 1
   const currentPageNumber = pageIndex + 1;
   const isLastPage = currentPageNumber >= story.total_parts; // Using total_parts from DB
 
-  // Stop active comment audio
+  // Stop active comment audio immediately and reset
   const stopCommentAudio = () => {
     if (commentAudioRef.current) {
       try {
         commentAudioRef.current.pause();
+        commentAudioRef.current.currentTime = 0;
         commentAudioRef.current = null;
       } catch (err) {
         console.warn("Could not pause audio:", err);
@@ -79,14 +81,22 @@ function ReadingPage({ story, onFinish, onExit }) {
     }
   }, [story, currentPageNumber]);
 
-  // When page loads and user is looking at the spread, play Alice's statement
+  // When a new page finishes loading and user is on the spread, play Alice's statement ONCE
   useEffect(() => {
-    if (pageData?.commentAudioBase64 && !showPrompt && !paused) {
+    if (
+      !isLoading &&
+      pageData?.commentAudioBase64 &&
+      pageData.page_number === currentPageNumber &&
+      lastPlayedPageRef.current !== pageData.page_number &&
+      !showPrompt &&
+      !paused
+    ) {
+      lastPlayedPageRef.current = pageData.page_number;
       playCommentVoice(pageData.commentAudioBase64);
-    } else if (showPrompt || paused) {
+    } else if (showPrompt || paused || isLoading) {
       stopCommentAudio();
     }
-  }, [pageData, showPrompt, paused]);
+  }, [pageData, showPrompt, paused, isLoading, currentPageNumber]);
 
   const handleOpenPrompt = () => {
     stopCommentAudio();
@@ -95,6 +105,9 @@ function ReadingPage({ story, onFinish, onExit }) {
 
   const goToNextPageOrFinish = async () => {
     stopCommentAudio();
+    // Clear old page data immediately so it can NEVER replay while loading the next page
+    setPageData(null);
+    setIsLoading(true);
     setShowPrompt(false);
     
     if (isLastPage) {
