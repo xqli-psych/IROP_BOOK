@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TopBar from "../components/TopBar";
 import StoryBook from "../components/StoryBook";
 import TranscriptDrawer from "../components/TranscriptDrawer";
@@ -14,19 +14,52 @@ function ReadingPage({ story, onFinish, onExit }) {
   const [pageIndex, setPageIndex] = useState(0); // 0-indexed for React, but DB is 1-indexed
   const [paused, setPaused] = useState(false);
   
-  // New state for dynamic database content
+  // Dynamic database content
   const [pageData, setPageData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const { sessionId } = useSession();
+  const commentAudioRef = useRef(null);
 
   // The actual database page number is pageIndex + 1
   const currentPageNumber = pageIndex + 1;
   const isLastPage = currentPageNumber >= story.total_parts; // Using total_parts from DB
 
+  // Stop active comment audio
+  const stopCommentAudio = () => {
+    if (commentAudioRef.current) {
+      try {
+        commentAudioRef.current.pause();
+        commentAudioRef.current = null;
+      } catch (err) {
+        console.warn("Could not pause audio:", err);
+      }
+    }
+  };
+
+  // Play comment audio with child voice pitch & cadence
+  const playCommentVoice = (audioBase64) => {
+    if (!audioBase64) return;
+    stopCommentAudio();
+    try {
+      const audio = new Audio("data:audio/wav;base64," + audioBase64);
+      audio.preservesPitch = false;
+      audio.mozPreservesPitch = false;
+      audio.webkitPreservesPitch = false;
+      audio.playbackRate = 1.18;
+      audio.play().catch((err) => {
+        console.warn("Autoplay was blocked by browser policy:", err);
+      });
+      commentAudioRef.current = audio;
+    } catch (e) {
+      console.warn("Error playing comment audio:", e);
+    }
+  };
+
   // Fetch page data whenever the pageIndex changes
   useEffect(() => {
     const fetchPage = async () => {
+      stopCommentAudio();
       setIsLoading(true);
       try {
         const response = await apiClient.getStoryPage(story.id, currentPageNumber);
@@ -46,17 +79,30 @@ function ReadingPage({ story, onFinish, onExit }) {
     }
   }, [story, currentPageNumber]);
 
+  // When page loads and user is looking at the spread, play Alice's statement
+  useEffect(() => {
+    if (pageData?.commentAudioBase64 && !showPrompt && !paused) {
+      playCommentVoice(pageData.commentAudioBase64);
+    } else if (showPrompt || paused) {
+      stopCommentAudio();
+    }
+  }, [pageData, showPrompt, paused]);
+
+  const handleOpenPrompt = () => {
+    stopCommentAudio();
+    setShowPrompt(true);
+  };
+
   const goToNextPageOrFinish = async () => {
+    stopCommentAudio();
     setShowPrompt(false);
     
     if (isLastPage) {
-      // If it's the last page, we finish the story
       onFinish();
     } else {
       const nextPageIndex = pageIndex + 1;
       setPageIndex(nextPageIndex);
       
-      // Save progress to the backend session table silently in the background
       try {
         await apiClient.updateProgress(sessionId, nextPageIndex + 1);
       } catch (err) {
@@ -66,17 +112,16 @@ function ReadingPage({ story, onFinish, onExit }) {
   };
 
   const handleSaveAndExit = async () => {
+    stopCommentAudio();
     try {
-      // Save the current page to the database before routing away
       await apiClient.updateProgress(sessionId, currentPageNumber);
       onExit();
     } catch (err) {
       console.error("Failed to save session before exiting:", err);
-      onExit(); // Exit anyway even if save fails
+      onExit();
     }
   };
 
-  // Show a loading screen while waiting for the database
   if (isLoading || !pageData) {
     return (
       <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -91,9 +136,12 @@ function ReadingPage({ story, onFinish, onExit }) {
         title={story.title}
         part={currentPageNumber}
         totalParts={story.total_parts}
-        onContinue={() => setShowPrompt(true)}
+        onContinue={handleOpenPrompt}
         showContinue={!showPrompt}
-        onPause={() => setPaused(true)}
+        onPause={() => {
+          stopCommentAudio();
+          setPaused(true);
+        }}
       />
 
       <main className={`reading-layout${paused ? " reading-layout-paused" : ""}`}>
@@ -107,6 +155,8 @@ function ReadingPage({ story, onFinish, onExit }) {
           {!showPrompt && (
             <AvatarComment
               comment={pageData.avatar_comment}
+              hasAudio={Boolean(pageData?.commentAudioBase64)}
+              onReplay={() => playCommentVoice(pageData?.commentAudioBase64)}
             />
           )}
 
@@ -119,7 +169,6 @@ function ReadingPage({ story, onFinish, onExit }) {
               onSkip={goToNextPageOrFinish}
               onContinue={goToNextPageOrFinish}
               
-              // We pass these down so MSTPrompt can submit audio/text to the backend
               pageId={pageData.id}
               storyPageText={pageData.page_text}
             />

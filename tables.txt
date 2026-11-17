@@ -1,11 +1,14 @@
 -- ==============================================================================
--- Migration: Add dedicated tracking columns to session_logs for dialogic reading & MST
+-- Migration: Add dedicated tracking columns to session_logs and story_pages
 -- Run this in your Supabase SQL Editor:
 -- ==============================================================================
 ALTER TABLE public.session_logs
 ADD COLUMN IF NOT EXISTS question_text TEXT,
 ADD COLUMN IF NOT EXISTS emotion_match TEXT,
 ADD COLUMN IF NOT EXISTS follow_up_question TEXT;
+
+ALTER TABLE public.story_pages
+ADD COLUMN IF NOT EXISTS follow_up_prompt TEXT;
 -- ==============================================================================
 
 -- 1. Clear the old data

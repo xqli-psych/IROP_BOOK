@@ -129,11 +129,11 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
           <div className="mst-badge-row">
             {followUpQuestion && !isFollowUpAnswered ? (
               <span className="mst-question-badge mst-question-badge-followup">
-                ✨ Alice asks you
+                Alice asks you
               </span>
             ) : (
               <span className="mst-question-badge">
-                📖 Question for you
+                Question for you
               </span>
             )}
           </div>
@@ -172,7 +172,7 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
           <div className="mst-answer-panel">
             {followUpQuestion && !isFollowUpAnswered && aiReaction && (
               <div className="mst-avatar-quote-bubble">
-                <span className="mst-quote-author">👧 Alice:</span>
+                <span className="mst-quote-author">Alice:</span>
                 <p className="mst-quote-text">{aiReaction}</p>
               </div>
             )}
@@ -235,7 +235,7 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
           </div>
         ) : (
           <div className="mst-reaction-panel">
-            <span className="mst-reaction-badge">👧 Alice says:</span>
+            <span className="mst-reaction-badge">Alice says:</span>
             <p>{aiReaction || reaction}</p> 
           </div>
         )}

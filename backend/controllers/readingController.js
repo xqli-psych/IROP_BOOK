@@ -6,6 +6,24 @@ import { graph } from "../graph/workflow.js";
 import { supabase } from "../config/supabase.js"; 
 import { generateSpeech } from "../services/ttsService.js";
 
+// Permanent, consistent follow-up questions per page so questions remain identical across every run
+export const PERMANENT_PAGE_FOLLOW_UPS = {
+  1: "Did you ever have a scary shadow in your room when you were little?",
+  2: "What do you do when you want to feel super safe in bed?",
+  3: "Did you ever call your mom or dad when you were scared at night?",
+  4: "Did you ever have to be really brave when grown-ups didn't believe you?",
+  5: "What is your favorite late-night snack from the kitchen?",
+  6: "Have you ever made a sneaky trap or bait to catch something?",
+  7: "Did you ever leave a trail of treats for someone or a pet?",
+  8: "What makes you feel brave when you are waiting for something spooky?",
+  9: "Did you ever play hide and seek in a dark closet?",
+  10: "Have you ever watched an animal or pet do something really funny?",
+  11: "Did you ever close a door super fast so something couldn't get in?",
+  12: "How do you celebrate when you solve a really tricky problem?",
+  13: "Did you ever worry about something surprising happening to your family in the morning?",
+  14: "Did you ever leave a funny note for your mom or dad?",
+};
+
 export const analyzeReading = async (req, res) => {
   let uploadedFilePath = null;
   
@@ -71,6 +89,13 @@ export const analyzeReading = async (req, res) => {
     const pageImageUrl = "";
     
     const isFollowUpBool = isFollowUp === "true" || isFollowUp === true;
+
+    // Use permanent follow-up question from database or curated permanent map
+    const pageNum = pageData?.page_number;
+    const permanentFollowUp =
+      pageData?.follow_up_prompt ||
+      PERMANENT_PAGE_FOLLOW_UPS[pageNum] ||
+      "Did you ever have a scary shadow in your room when you were little?";
          
     const initialState = {
       storyPageText: storyPageText || pageData?.page_text || pageData?.content || pageData?.text || "No context provided.",
@@ -81,6 +106,7 @@ export const analyzeReading = async (req, res) => {
       conversationSummary: previousSummary,
       transcript: transcript,
       isFollowUp: isFollowUpBool,
+      permanentFollowUpQuestion: permanentFollowUp,
     };
 
     let graphResult = null;

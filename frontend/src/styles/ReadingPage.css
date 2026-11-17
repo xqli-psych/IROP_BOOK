@@ -297,6 +297,33 @@
   border-right: 10px solid #ffffff;
 }
 
+.comment-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.comment-listen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f7ede1;
+  border: 1px solid #ebd3b4;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a4f25;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comment-listen-btn:hover {
+  background: #fae4cc;
+  transform: translateY(-1px);
+}
+
 .comment-author-badge {
   display: inline-block;
   font-size: 13px;
@@ -304,7 +331,6 @@
   color: #9c683b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
 }
 
 .comment-text {

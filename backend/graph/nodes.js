@@ -218,7 +218,7 @@ Reader said: "${state.transcript || ""}"`;
   }
 
   // When emotionMatch is INCORRECT, PARTIAL, or NONE (no MST):
-  // We generate Alice's redirect reaction AND a broader, personal follow-up question.
+  // Generate Alice's 5-year-old redirect reaction, paired with the PERMANENT, saved follow-up question for this page.
   let redirectRules = "";
   if (state.emotionMatch === "INCORRECT") {
     redirectRules = `The reader named the WRONG emotion ("${state.detectedEmotion || "that feeling"}"), but the character actually feels: "${state.expectedEmotion || "scared/worried"}".
@@ -245,26 +245,12 @@ Reader said: "${state.transcript || ""}"`;
   }
 
   const systemPrompt = `You are Alice, a sweet 5-year-old child listening to an adult read a picture book to you.
-You must output your response with TWO XML tags:
-<reaction>
-Alice's childlike reaction here.
-</reaction>
-<follow_up>
-Alice's personal follow-up question to the adult reader here.
-</follow_up>
-
-### Rules for <reaction>:
 ${redirectRules}
 
-### Rules for <follow_up>:
-- Ask 1 short, curious personal follow-up question (under 15 words) connecting a theme or situation from this page to the reader's own life or childhood memories.
-- Themes by situation:
-  - Bedtime fears / dark room / monsters: "Did you ever have a scary shadow in your room when you were little?" or "What did you do when you were scared at bedtime?"
-  - Asking parents for help: "Did you ever call your mom and dad to check for monsters?"
-  - Making traps / leaving bait / clever plans: "Have you ever made a sneaky trap or bait to catch something?"
-  - Feeling brave / doing something scary: "What makes you feel super brave when you're scared?"
-- Spoken in Alice's sweet 5-year-old voice (simple words, curious tone).
-- Do not repeat the story question verbatim; make it personal to the reader.`;
+### STRICT LENGTH RULES:
+- Under 20 words total.
+- Do NOT repeat the reader's exact words back.
+- Do NOT ask a new follow-up question here (the question is already predetermined). Only give your reaction!`;
 
   const textPrompt = `Story page:
 "${state.storyPageText || ""}"
@@ -272,60 +258,38 @@ ${redirectRules}
 Visual clues:
 "${state.visualSceneContext || ""}"
 
-Original question:
-"${state.questionText || ""}"
-
 Expected emotion:
 "${state.expectedEmotion || ""}"
 
 Reader said:
 "${state.transcript || ""}"
 
-Provide both <reaction> and <follow_up>.`;
+Provide Alice's short reaction.`;
 
-  let cleanResponse = "";
+  let cleanReaction = "";
   try {
     const result = await llm.invoke([
       new SystemMessage(systemPrompt),
       new HumanMessage(textPrompt),
     ]);
-    cleanResponse = typeof result.content === "string" ? result.content.trim() : String(result.content);
+    cleanReaction = typeof result.content === "string" ? result.content.trim() : String(result.content).trim();
+    // Strip any accidental XML tags if generated
+    cleanReaction = cleanReaction.replace(/<[^>]+>/g, "").trim();
   } catch (err) {
-    console.warn("Failed generating response with LLM:", err.message);
-    cleanResponse = `<reaction>[curious] Are you sure? Look at his face, he looks super worried!</reaction>\n<follow_up>Did you ever have a scary shadow in your room when you were little?</follow_up>`;
+    console.warn("Failed generating reaction with LLM:", err.message);
+    cleanReaction = "[curious] Are you sure? Look at his face, he looks super worried!";
   }
 
-  const reactionMatch = cleanResponse.match(/<reaction>([\s\S]*?)<\/reaction>/i);
-  const followUpMatch = cleanResponse.match(/<follow_up>([\s\S]*?)<\/follow_up>/i);
+  // The follow-up question is PERMANENT and SAVED for this page, ensuring 100% consistency
+  const permanentFollowUp = state.permanentFollowUpQuestion ||
+    "Did you ever have a scary shadow in your room when you were little?";
 
-  let reactionText = reactionMatch 
-    ? reactionMatch[1].trim() 
-    : cleanResponse.replace(/<[^>]+>/g, "").trim();
-
-  let followUpText = followUpMatch 
-    ? followUpMatch[1].trim() 
-    : null;
-
-  // Fallback follow-up question if model omitted the tag
-  if (!followUpText) {
-    const storyLower = (state.storyPageText || "").toLowerCase();
-    if (storyLower.includes("mom") || storyLower.includes("dad") || storyLower.includes("call")) {
-      followUpText = "Did you ever call your mom and dad when you were scared at night?";
-    } else if (storyLower.includes("bait") || storyLower.includes("kitchen") || storyLower.includes("garage") || storyLower.includes("trap")) {
-      followUpText = "Have you ever made a sneaky trap or bait to catch something?";
-    } else if (storyLower.includes("brave") || storyLower.includes("board") || storyLower.includes("careful")) {
-      followUpText = "What's something that makes you feel brave when you're scared?";
-    } else {
-      followUpText = "Did you ever have a scary shadow in your room when you were little?";
-    }
-  }
-
-  // Combined spoken response for Orpheus TTS so Alice speaks both smoothly
-  const fullSpokenResponse = `${reactionText} ${followUpText}`.trim();
+  // Combined spoken response for Orpheus TTS so Alice speaks reaction then the question smoothly
+  const fullSpokenResponse = `${cleanReaction} ${permanentFollowUp}`.trim();
 
   return {
     response: fullSpokenResponse,
-    followUpQuestion: followUpText,
+    followUpQuestion: permanentFollowUp,
   };
 };
 

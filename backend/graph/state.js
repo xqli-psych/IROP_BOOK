@@ -16,5 +16,6 @@ export const GraphState = Annotation.Root({
   mstAnalysis: Annotation,         
   response: Annotation,
   followUpQuestion: Annotation,
+  permanentFollowUpQuestion: Annotation,
   isFollowUp: Annotation,
 });
