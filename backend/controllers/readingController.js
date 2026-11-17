@@ -130,6 +130,11 @@ export const analyzeReading = async (req, res) => {
 
   } catch (error) {
     console.error("Error during execution:", error);
+    if (error?.status === 403 || String(error).includes("403") || String(error).includes("Forbidden")) {
+      console.warn("\n⚠️ GROQ REGIONAL BLOCK (403 Forbidden):");
+      console.warn("Groq blocks connections originating from Hong Kong or mainland China.");
+      console.warn("If you are using a VPN, please switch your location to Singapore, United States, Japan, Australia, or Europe, and try again.\n");
+    }
     // Ensure cleanup happens even on error
     if (uploadedFilePath) {
         try {
