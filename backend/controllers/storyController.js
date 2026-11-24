@@ -1,91 +1,176 @@
-import { getStories, getStoryPage } from "../services/dbService.js";
-import { generateAndStoreQuestionsForStory, createStoryWithAiQuestions } from "../services/aiQuestionService.js";
-import { generateSpeech } from "../services/ttsService.js";
-import { OPEN_PAGE_PROMPTS, BOOK_MST_FOLLOW_UPS } from "./readingController.js";
+import {
+  getStories,
+  getStoryPage,
+  getStorySequence
+} from "../services/dbService.js";
 
-// In-memory cache for avatar comments so audio is generated once per page and instant thereafter
+import {
+  generateAndStoreQuestionsForStory,
+  createStoryWithAiQuestions
+} from "../services/aiQuestionService.js";
+
+import { generateSpeech } from "../services/ttsService.js";
+
+import {
+  OPEN_PAGE_PROMPTS,
+  BOOK_MST_FOLLOW_UPS
+} from "./readingController.js";
+
+// In-memory cache for avatar comments so audio
+// is generated once per page and instant thereafter
 const commentAudioCache = new Map();
 
 export const listStories = async (req, res) => {
   try {
     const stories = await getStories();
-    res.json({ success: true, data: stories });
+
+    res.json({
+      success: true,
+      data: stories
+    });
+
   } catch (error) {
     console.error("Error fetching stories:", error);
-    res.status(500).json({ error: "Failed to fetch stories." });
+
+    res.status(500).json({
+      error: "Failed to fetch stories."
+    });
   }
 };
 
 export const fetchPage = async (req, res) => {
   try {
     const { storyId, pageNumber } = req.params;
-    const page = await getStoryPage(storyId, parseInt(pageNumber));
-    
+
+    const page = await getStoryPage(
+      storyId,
+      parseInt(pageNumber)
+    );
+
     if (!page) {
-      return res.status(404).json({ error: "Page not found." });
+      return res.status(404).json({
+        error: "Page not found."
+      });
     }
 
-    // Synthesize speech for Alice's pre-question avatar comment
+    // Synthesize speech for Alice's pre-question
+    // avatar comment
     let commentAudioBase64 = null;
+
     if (page.avatar_comment) {
       if (commentAudioCache.has(page.id)) {
-        commentAudioBase64 = commentAudioCache.get(page.id);
+
+        commentAudioBase64 =
+          commentAudioCache.get(page.id);
+
       } else {
         try {
-          commentAudioBase64 = await generateSpeech(page.avatar_comment);
-          commentAudioCache.set(page.id, commentAudioBase64);
+
+          commentAudioBase64 = await generateSpeech(
+            page.avatar_comment
+          );
+
+          commentAudioCache.set(
+            page.id,
+            commentAudioBase64
+          );
+
         } catch (audioErr) {
-          console.warn(`Could not synthesize comment audio for page ${pageNumber}:`, audioErr.message);
+          console.warn(
+            `Could not synthesize comment audio for page ${pageNumber}:`,
+            audioErr.message
+          );
         }
       }
     }
-    
+
     const pageNum = parseInt(pageNumber);
-    const openPrompt = OPEN_PAGE_PROMPTS[pageNum] || page.open_prompt || page.mst_prompt;
-    const followUpPrompt = BOOK_MST_FOLLOW_UPS[pageNum] || page.follow_up_prompt;
-    
-    res.json({ 
-      success: true, 
+
+    const openPrompt =
+      OPEN_PAGE_PROMPTS[pageNum] ||
+      page.open_prompt ||
+      page.mst_prompt;
+
+    const followUpPrompt =
+      BOOK_MST_FOLLOW_UPS[pageNum] ||
+      page.follow_up_prompt;
+
+    res.json({
+      success: true,
       data: {
         ...page,
         openPrompt,
         followUpPrompt,
         commentAudioBase64,
-      } 
+      }
     });
+
   } catch (error) {
     console.error("Error fetching page:", error);
-    res.status(500).json({ error: "Failed to fetch page content." });
+
+    res.status(500).json({
+      error: "Failed to fetch page content."
+    });
   }
 };
 
 /**
- * Generate (or regenerate) and store questions for an existing story.
- * The questions are persisted to story_pages, ensuring they remain the same
- * across all subsequent reading sessions.
+ * Generate (or regenerate) and store questions
+ * for an existing story.
+ *
+ * The questions are persisted to story_pages,
+ * ensuring they remain the same across all
+ * subsequent reading sessions.
  */
 export const generateStoryQuestions = async (req, res) => {
   try {
     const { storyId } = req.params;
     const { forceRegenerate } = req.body || {};
 
-    const result = await generateAndStoreQuestionsForStory(storyId, Boolean(forceRegenerate));
-    res.json({ success: true, data: result });
+    const result = await generateAndStoreQuestionsForStory(
+      storyId,
+      Boolean(forceRegenerate)
+    );
+
+    res.json({
+      success: true,
+      data: result
+    });
+
   } catch (error) {
-    console.error("Error generating questions for story:", error);
-    res.status(500).json({ error: error.message || "Failed to generate story questions." });
+    console.error(
+      "Error generating questions for story:",
+      error
+    );
+
+    res.status(500).json({
+      error:
+        error.message ||
+        "Failed to generate story questions."
+    });
   }
 };
 
 /**
- * Add a brand new book with pages, automatically using AI to generate
- * and persist dialogic MST questions, expected responses, and avatar comments.
+ * Add a brand new book with pages, automatically
+ * using AI to generate and persist dialogic MST
+ * questions, expected responses, and avatar comments.
  */
 export const addStoryWithAiQuestions = async (req, res) => {
   try {
-    const { title, author, genre, estimatedTime, pages } = req.body;
+    const {
+      title,
+      author,
+      genre,
+      estimatedTime,
+      pages
+    } = req.body;
+
     if (!title || !pages || pages.length === 0) {
-      return res.status(400).json({ error: "Story title and an array of pages are required." });
+      return res.status(400).json({
+        error:
+          "Story title and an array of pages are required."
+      });
     }
 
     const result = await createStoryWithAiQuestions({
@@ -96,9 +181,51 @@ export const addStoryWithAiQuestions = async (req, res) => {
       pages,
     });
 
-    res.json({ success: true, data: result });
+    res.json({
+      success: true,
+      data: result
+    });
+
   } catch (error) {
-    console.error("Error adding story with AI questions:", error);
-    res.status(500).json({ error: error.message || "Failed to add story with questions." });
+    console.error(
+      "Error adding story with AI questions:",
+      error
+    );
+
+    res.status(500).json({
+      error:
+        error.message ||
+        "Failed to add story with questions."
+    });
+  }
+};
+
+/**
+ * Retrieve the complete ordered and validated
+ * story sequence from Supabase.
+ */
+export const fetchStorySequence = async (req, res) => {
+  try {
+    const { storyId } = req.params;
+
+    const pages = await getStorySequence(storyId);
+
+    return res.status(200).json({
+      success: true,
+      data: pages
+    });
+
+  } catch (error) {
+    console.error(
+      "Error fetching story sequence:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      error:
+        error.message ||
+        "Failed to load story sequence."
+    });
   }
 };
