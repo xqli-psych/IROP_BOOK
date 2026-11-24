@@ -6,23 +6,46 @@ import { graph } from "../graph/workflow.js";
 import { supabase } from "../config/supabase.js"; 
 import { generateSpeech } from "../services/ttsService.js";
 
-// Permanent, consistent follow-up questions per page so questions remain identical across every run
-export const PERMANENT_PAGE_FOLLOW_UPS = {
-  1: "Did you ever have a scary shadow in your room when you were little?",
-  2: "What do you do when you want to feel super safe in bed?",
-  3: "Did you ever call your mom or dad when you were scared at night?",
-  4: "Did you ever have to be really brave when grown-ups didn't believe you?",
-  5: "What is your favorite late-night snack from the kitchen?",
-  6: "Have you ever made a sneaky trap or bait to catch something?",
-  7: "Did you ever leave a trail of treats for someone or a pet?",
-  8: "What makes you feel brave when you are waiting for something spooky?",
-  9: "Did you ever play hide and seek in a dark closet?",
-  10: "Have you ever watched an animal or pet do something really funny?",
-  11: "Did you ever close a door super fast so something couldn't get in?",
-  12: "How do you celebrate when you solve a really tricky problem?",
-  13: "Did you ever worry about something surprising happening to your family in the morning?",
-  14: "Did you ever leave a funny note for your mom or dad?",
+// Initial open prompts for each page: Phrased as a PROMPT (not a question) and strictly
+// avoids prompting Mental State Talk (MST), allowing researcher to observe if the reader spontaneously uses MST.
+export const OPEN_PAGE_PROMPTS = {
+  1: "Tell Alice what is happening here with the boy and his bed.",
+  2: "Tell Alice what the boy is doing with the wooden board.",
+  3: "Tell Alice what happens when the boy looks under the bed.",
+  4: "Tell Alice what happens when Mom and Dad check under the bed.",
+  5: "Tell Alice about what the boy is doing in the kitchen.",
+  6: "Tell Alice what the boy is setting up down the hall and in the garage.",
+  7: "Tell Alice about the trail of snacks down the stairs.",
+  8: "Tell Alice what happens when the alligator crawls out from under the bed.",
+  9: "Tell Alice what the boy does when the alligator passes by the closet.",
+  10: "Tell Alice what is happening while the alligator is eating the cookies.",
+  11: "Tell Alice about what the boy is doing behind the garage door.",
+  12: "Tell Alice what the boy does after the alligator enters the garage.",
+  13: "Tell Alice about what might happen tomorrow morning in the garage.",
+  14: "Tell Alice about the note the boy left on the garage door.",
 };
+
+// Book-specific follow-up questions: Asked by Alice as a direct question about the story
+// ONLY if the reader missed MST or answered with an incorrect/partial emotion on the initial prompt.
+export const BOOK_MST_FOLLOW_UPS = {
+  1: "How do you think the boy feels about having an alligator under his bed?",
+  2: "Why do you think the boy feels he has to be very careful?",
+  3: "How do you think the boy feels when he looks under the bed and can't see the alligator?",
+  4: "What do you think Mom and Dad are thinking when they look under the bed?",
+  5: "What do you think the boy is hoping the alligator will do with the bait?",
+  6: "Why do you think the boy wants to lure the alligator all the way out to the garage?",
+  7: "What does the boy think the alligator will do when it sees the trail of food?",
+  8: "How do you think the boy feels as he watches the alligator crawl out?",
+  9: "Why do you think the boy wanted to hide in the hall closet?",
+  10: "How is the alligator feeling right now as he eats the trail of cookies?",
+  11: "What is the boy hoping for as he hides behind the garage door?",
+  12: "How does the boy feel right after locking the alligator in the garage?",
+  13: "What is the boy worried might happen to his dad in the morning?",
+  14: "Why do you think the boy wanted to leave a note offering to help his dad?",
+};
+
+// Backwards-compatibility alias
+export const PERMANENT_PAGE_FOLLOW_UPS = BOOK_MST_FOLLOW_UPS;
 
 export const analyzeReading = async (req, res) => {
   let uploadedFilePath = null;
@@ -65,12 +88,14 @@ export const analyzeReading = async (req, res) => {
       .eq("id", pageId)
       .single();
 
+    const pageNum = pageData?.page_number;
+    const isFollowUpBool = isFollowUp === "true" || isFollowUp === true;
+
     const activeQuestion =
       questionText ||
-      pageData?.mst_prompt ||
-      pageData?.question ||
-      pageData?.prompt ||
-      pageData?.question_text ||
+      (isFollowUpBool
+        ? (pageData?.follow_up_prompt || BOOK_MST_FOLLOW_UPS[pageNum])
+        : (OPEN_PAGE_PROMPTS[pageNum] || pageData?.mst_prompt)) ||
       "";
 
     const activeExpectedEmotion =
@@ -87,15 +112,12 @@ export const analyzeReading = async (req, res) => {
     // Text visual clues from avatar_comment are passed in visualSceneContext,
     // avoiding large base64 image payloads that hit Groq's 7,000 ITPM rate limit.
     const pageImageUrl = "";
-    
-    const isFollowUpBool = isFollowUp === "true" || isFollowUp === true;
 
-    // Use permanent follow-up question from database or curated permanent map
-    const pageNum = pageData?.page_number;
+    // Use permanent book follow-up question from database or curated book map
     const permanentFollowUp =
       pageData?.follow_up_prompt ||
-      PERMANENT_PAGE_FOLLOW_UPS[pageNum] ||
-      "Did you ever have a scary shadow in your room when you were little?";
+      BOOK_MST_FOLLOW_UPS[pageNum] ||
+      "How do you think the boy feels?";
          
     const initialState = {
       storyPageText: storyPageText || pageData?.page_text || pageData?.content || pageData?.text || "No context provided.",

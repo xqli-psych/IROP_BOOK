@@ -1,6 +1,7 @@
 import { getStories, getStoryPage } from "../services/dbService.js";
 import { generateAndStoreQuestionsForStory, createStoryWithAiQuestions } from "../services/aiQuestionService.js";
 import { generateSpeech } from "../services/ttsService.js";
+import { OPEN_PAGE_PROMPTS, BOOK_MST_FOLLOW_UPS } from "./readingController.js";
 
 // In-memory cache for avatar comments so audio is generated once per page and instant thereafter
 const commentAudioCache = new Map();
@@ -39,10 +40,16 @@ export const fetchPage = async (req, res) => {
       }
     }
     
+    const pageNum = parseInt(pageNumber);
+    const openPrompt = OPEN_PAGE_PROMPTS[pageNum] || page.open_prompt || page.mst_prompt;
+    const followUpPrompt = BOOK_MST_FOLLOW_UPS[pageNum] || page.follow_up_prompt;
+    
     res.json({ 
       success: true, 
       data: {
         ...page,
+        openPrompt,
+        followUpPrompt,
         commentAudioBase64,
       } 
     });

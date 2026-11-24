@@ -2,25 +2,29 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { llm } from "../config/llm.js";
 
 export const evaluateMst = async (state) => {
-  // If the user is answering a personal follow-up question
+  // If the user is answering a book-specific follow-up question
   if (state.isFollowUp) {
-    const followUpSystemPrompt = `You are an expert developmental psychology coder evaluating an adult reader's response to a personal reflection question asked by a child avatar.
+    const followUpSystemPrompt = `You are an expert developmental psychology coder evaluating an adult reader's response to an MST scaffolding question about a picture book.
+The child avatar asked: "${state.questionText || "Question about the character"}"
+Expected character feelings/thoughts: "${state.expectedEmotion || "Character emotion"}"
+
 You MUST respond with ONLY a valid JSON object:
 {
   "hasMst": "YES" or "NO",
-  "emotionMatch": "CORRECT" or "NONE",
-  "detectedEmotion": "the feeling, mental state, or memory expressed, or 'none'",
+  "emotionMatch": "CORRECT", "PARTIAL", "INCORRECT", or "NONE",
+  "detectedEmotion": "the feeling, mental state, or desire expressed, or 'none'",
   "reasoning": "brief explanation"
 }
 
 What counts as Mental State Talk (hasMst = YES):
-- Feelings/emotions: scared, afraid, worried, relieved, safe, happy, proud, nervous, calm.
-- Mental states/thoughts: remember, think, knew, wondered, believed, imagined, wished.
-- Desires/intentions: wanted, tried to, hoped.
-- Sharing a genuine childhood memory or emotional experience.`;
+- Feelings/emotions: scared, afraid, worried, relieved, safe, happy, proud, nervous, calm, brave.
+- Mental states/thoughts: remember, think, knew, wondered, believed, imagined, wished, understand.
+- Desires/intentions: wanted, tried to, hoped, need, plan.
+- Character motivations: explaining why a character feels, thinks, or behaves a certain way.`;
 
-    const followUpPrompt = `Question asked to reader: "${state.questionText || "Personal reflection question"}"
-Reader's personal response: "${state.transcript || ""}"`;
+    const followUpPrompt = `Question asked to reader: "${state.questionText || ""}"
+Expected character emotion: "${state.expectedEmotion || ""}"
+Reader's response: "${state.transcript || ""}"`;
 
     let parsed = null;
     try {
@@ -36,19 +40,22 @@ Reader's personal response: "${state.transcript || ""}"`;
       parsed = {
         hasMst: "YES",
         emotionMatch: "CORRECT",
-        detectedEmotion: "personal reflection",
-        reasoning: "Reader answered personal question",
+        detectedEmotion: "feelings",
+        reasoning: "Reader answered book follow-up question",
       };
     }
 
     const hasMst = String(parsed?.hasMst || "").toUpperCase().startsWith("Y");
+    const rawMatch = String(parsed?.emotionMatch || (hasMst ? "CORRECT" : "NONE")).toUpperCase();
+    const isCorrect = rawMatch.includes("CORRECT") || rawMatch.includes("PARTIAL");
+
     return {
       mstDetected: hasMst,
-      detectedEmotion: parsed?.detectedEmotion || "personal reflection",
-      emotionMatch: hasMst ? "CORRECT" : "NONE",
-      isEmotionCorrect: hasMst,
+      detectedEmotion: parsed?.detectedEmotion || (hasMst ? "feelings" : "none"),
+      emotionMatch: rawMatch.includes("CORRECT") ? "CORRECT" : rawMatch.includes("PARTIAL") ? "PARTIAL" : hasMst ? "CORRECT" : "NONE",
+      isEmotionCorrect: isCorrect,
       missingNuance: "",
-      mstAnalysis: parsed?.reasoning || "Personal follow-up exchange",
+      mstAnalysis: parsed?.reasoning || "Book follow-up exchange",
     };
   }
 
@@ -157,21 +164,23 @@ ${state.transcript || ""}
 };
 
 export const generateResponse = async (state) => {
-  // If this turn is answering Alice's personal follow-up question
+  // If this turn is answering Alice's book-specific follow-up question
   if (state.isFollowUp) {
-    const followUpReactionPrompt = `You are Alice, a sweet 5-year-old child listening to an adult reader share a personal memory or experience.
-The reader just replied to your personal question: "${state.questionText || "Personal question"}".
+    const followUpReactionPrompt = `You are Alice, a sweet 5-year-old child listening to an adult reader answer your question about the characters in the picture book.
+The reader just replied to your question: "${state.questionText || "Question about the character"}".
 Reader said: "${state.transcript || ""}"
+Character's actual feelings/thoughts: "${state.expectedEmotion || ""}"
 
 ### Instructions:
-- Respond like a real 5-year-old listening to an adult's story!
-- React with warmth, curiosity, or childlike empathy.
-- Keep it to 1 or 2 tiny sentences (under 15 words total).
+- Respond like a real 5-year-old kid!
+- React with childlike empathy, agreement, or curiosity about what they said about the character.
+- Keep it to 1 or 2 tiny sentences (under 18 words total).
+- Connect to a story or visual detail if appropriate.
 - Start with ONE bracketed vocal tag: [excited], [giggling], [curious], [whisper], or [dramatic gasp].
 - Examples:
-  - "[giggling] Whoa! Shadows can be super tricky! Thanks for telling me!"
-  - "[whisper] Ooh, that sounds spooky! I'm glad your mom gave you a hug!"
-  - "[excited] Wow, that is so brave! You did such a great job!"`;
+  - "[excited] Yeah! That alligator looks super sneaky under the bed!"
+  - "[whisper] Ooh, I think so too! He has to be so careful of his toes!"
+  - "[giggling] Hehehe! Look at his proud smile! He tricked him so well!"`;
 
     const result = await llm.invoke([
       new SystemMessage(followUpReactionPrompt),
@@ -282,7 +291,7 @@ Provide Alice's short reaction.`;
 
   // The follow-up question is PERMANENT and SAVED for this page, ensuring 100% consistency
   const permanentFollowUp = state.permanentFollowUpQuestion ||
-    "Did you ever have a scary shadow in your room when you were little?";
+    "How do you think the boy feels about what is happening?";
 
   // Combined spoken response for Orpheus TTS so Alice speaks reaction then the question smoothly
   const fullSpokenResponse = `${cleanReaction} ${permanentFollowUp}`.trim();

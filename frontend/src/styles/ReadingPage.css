@@ -847,3 +847,70 @@
   font-size: 22px;
   font-weight: bold;
 }
+
+/* Finished Reading floating trigger button on clean story spreads */
+.reading-finish-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.finished-reading-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #ffd992 0%, #f7c36a 100%);
+  border: 2px solid #e2a842;
+  color: #4a2c06;
+  border-radius: 999px;
+  padding: 14px 44px;
+  font-size: 21px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(180, 110, 30, 0.25);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.finished-reading-btn:hover {
+  background: linear-gradient(135deg, #ffe0a3 0%, #f9cb78 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 26px rgba(180, 110, 30, 0.32);
+}
+
+.finished-reading-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.mst-quote-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.mst-quote-listen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fdf2e3;
+  border: 1px solid #ebd0ad;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8c5218;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mst-quote-listen-btn:hover {
+  background: #fae4cc;
+}

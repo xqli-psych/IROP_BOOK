@@ -81,26 +81,14 @@ function ReadingPage({ story, onFinish, onExit }) {
     }
   }, [story, currentPageNumber]);
 
-  // When a new page finishes loading and user is on the spread, play Alice's statement ONCE
-  useEffect(() => {
-    if (
-      !isLoading &&
-      pageData?.commentAudioBase64 &&
-      pageData.page_number === currentPageNumber &&
-      lastPlayedPageRef.current !== pageData.page_number &&
-      !showPrompt &&
-      !paused
-    ) {
-      lastPlayedPageRef.current = pageData.page_number;
-      playCommentVoice(pageData.commentAudioBase64);
-    } else if (showPrompt || paused || isLoading) {
-      stopCommentAudio();
-    }
-  }, [pageData, showPrompt, paused, isLoading, currentPageNumber]);
-
-  const handleOpenPrompt = () => {
+  // Start interaction when the adult finishes reading the spread
+  const handleFinishedReading = () => {
     stopCommentAudio();
     setShowPrompt(true);
+    // Play Alice's visual comment voice once when the adult finishes reading
+    if (pageData?.commentAudioBase64) {
+      playCommentVoice(pageData.commentAudioBase64);
+    }
   };
 
   const goToNextPageOrFinish = async () => {
@@ -149,8 +137,8 @@ function ReadingPage({ story, onFinish, onExit }) {
         title={story.title}
         part={currentPageNumber}
         totalParts={story.total_parts}
-        onContinue={handleOpenPrompt}
-        showContinue={!showPrompt}
+        onContinue={handleFinishedReading}
+        showContinue={false}
         onPause={() => {
           stopCommentAudio();
           setPaused(true);
@@ -166,19 +154,29 @@ function ReadingPage({ story, onFinish, onExit }) {
           />
 
           {!showPrompt && (
-            <AvatarComment
-              comment={pageData.avatar_comment}
-              hasAudio={Boolean(pageData?.commentAudioBase64)}
-              onReplay={() => playCommentVoice(pageData?.commentAudioBase64)}
-            />
+            <div className="reading-finish-bar">
+              <button
+                type="button"
+                className="finished-reading-btn"
+                onClick={handleFinishedReading}
+              >
+                <span>Finished Reading</span>
+              </button>
+            </div>
           )}
 
           {showPrompt && (
             <MSTPrompt
-              prompt={pageData.mst_prompt}
+              prompt={pageData.openPrompt || pageData.mst_prompt}
+              followUpQuestionProp={pageData.followUpPrompt || pageData.follow_up_prompt}
               reaction={pageData.mst_response}
               avatarComment={pageData.avatar_comment}
-              onBack={() => setShowPrompt(false)}
+              onReplayComment={() => playCommentVoice(pageData?.commentAudioBase64)}
+              hasCommentAudio={Boolean(pageData?.commentAudioBase64)}
+              onBack={() => {
+                stopCommentAudio();
+                setShowPrompt(false);
+              }}
               onSkip={goToNextPageOrFinish}
               onContinue={goToNextPageOrFinish}
               

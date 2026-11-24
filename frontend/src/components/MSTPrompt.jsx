@@ -1,10 +1,22 @@
 import { useState } from "react";
-import { Mic, Square, ArrowLeft, Send, AlertCircle, X } from "lucide-react";
+import { Mic, Square, ArrowLeft, Send, AlertCircle, X, Volume2 } from "lucide-react";
 import { useAudioRecorder } from "../hooks/useAudioRecorder";
 import { apiClient } from "../utils/apiClient";
 import { useSession } from "../hooks/useSession";
 
-function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue, pageId, storyPageText }) {
+function MSTPrompt({
+  prompt,
+  followUpQuestionProp,
+  reaction,
+  avatarComment,
+  onReplayComment,
+  hasCommentAudio = false,
+  onBack,
+  onSkip,
+  onContinue,
+  pageId,
+  storyPageText,
+}) {
   const [answer, setAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -35,12 +47,12 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
     }
   };
 
+  const isAnsweringFollowUp = Boolean(followUpQuestion && !isFollowUpAnswered);
+
   const handleSubmit = async () => {
     if (!answer.trim() && !audioBlob) return;
     setIsProcessing(true);
     setErrorMessage("");
-
-    const isAnsweringFollowUp = Boolean(followUpQuestion && !isFollowUpAnswered);
 
     const formData = new FormData();
     formData.append("sessionId", sessionId);
@@ -68,15 +80,15 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
         }
 
         if (isAnsweringFollowUp) {
-          // Finished answering the second question
+          // Finished answering the book follow-up question
           setIsFollowUpAnswered(true);
           setSubmitted(true);
         } else if (response.followUpQuestion) {
-          // Present the second question directly
+          // Reader missed MST or gave incorrect emotion: present the book follow-up question
           setFollowUpQuestion(response.followUpQuestion);
           setAnswer(""); // clear input for second answer
         } else {
-          // Correct answer: no follow-up needed
+          // Correct answer with spontaneous MST: no follow-up needed
           setSubmitted(true);
         }
       }
@@ -96,11 +108,8 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
     }
   };
 
-  // Determine active question to display in the top banner
-  const displayedQuestion = (followUpQuestion && !isFollowUpAnswered)
-    ? followUpQuestion
-    : prompt;
-
+  // Determine active prompt or question to display in the top banner
+  const displayedPrompt = isAnsweringFollowUp ? followUpQuestion : prompt;
   const showInput = !submitted;
 
   return (
@@ -125,11 +134,11 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
       <div className="mst-question-wrapper">
         <div className="mst-question-panel">
           <div className="mst-badge-row">
-            <span className="mst-question-badge">
-              Question for you
+            <span className={`mst-question-badge ${isAnsweringFollowUp ? "mst-question-badge-followup" : ""}`}>
+              {isAnsweringFollowUp ? "Question from Alice" : "Prompt for you"}
             </span>
           </div>
-          <p className="mst-question">{displayedQuestion}</p>
+          <p className="mst-question">{displayedPrompt}</p>
         </div>
 
         <div className="mst-question-actions">
@@ -162,6 +171,35 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
 
         {showInput ? (
           <div className="mst-answer-panel">
+            {/* Alice's Visual Comment (or reaction quote) shown cleanly above input */}
+            {!isAnsweringFollowUp && avatarComment && (
+              <div className="mst-avatar-quote-bubble">
+                <div className="mst-quote-header">
+                  <span className="mst-quote-author">Alice says:</span>
+                  {hasCommentAudio && onReplayComment && (
+                    <button
+                      type="button"
+                      className="mst-quote-listen-btn"
+                      onClick={onReplayComment}
+                      title="Listen to Alice speak"
+                      aria-label="Listen to Alice speak"
+                    >
+                      <Volume2 size={13} />
+                      <span>Listen</span>
+                    </button>
+                  )}
+                </div>
+                <p className="mst-quote-text">{avatarComment}</p>
+              </div>
+            )}
+
+            {isAnsweringFollowUp && aiReaction && (
+              <div className="mst-avatar-quote-bubble">
+                <span className="mst-quote-author">Alice says:</span>
+                <p className="mst-quote-text">{aiReaction}</p>
+              </div>
+            )}
+
             <label htmlFor="mst-answer" className="mst-answer-label">
               {isProcessing ? (
                 <span className="mst-thinking-indicator">
@@ -170,8 +208,10 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                   <span className="mst-thinking-dot"></span>
                   Alice is listening and thinking...
                 </span>
+              ) : isAnsweringFollowUp ? (
+                "Answer Alice's question:"
               ) : (
-                "Type or say your answer:"
+                "Tell Alice what you think:"
               )}
             </label>
             <div className="mst-answer-row">
@@ -183,7 +223,9 @@ function MSTPrompt({ prompt, reaction, avatarComment, onBack, onSkip, onContinue
                     ? "Recording audio... click square when done."
                     : audioBlob
                     ? "Audio recorded. Click send!"
-                    : "Type your answer here..."
+                    : isAnsweringFollowUp
+                    ? "Type your answer to Alice's question..."
+                    : "Type what you think here..."
                 }
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
