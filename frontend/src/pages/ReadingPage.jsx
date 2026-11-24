@@ -1,4 +1,3 @@
-
 import React, {
   useState,
   useEffect,
@@ -11,10 +10,14 @@ import TranscriptDrawer from "../components/TranscriptDrawer";
 import AvatarComment from "../components/AvatarComment";
 import MSTPrompt from "../components/MSTPrompt";
 import PausedOverlay from "../components/PausedOverlay";
+import InstructionPage from "../components/InstructionPage";
 import { apiClient } from "../utils/apiClient";
 import { useSession } from "../hooks/useSession";
 
 function ReadingPage({ story, onFinish, onExit }) {
+
+  // NEW: Show instructions before reading
+  const [showInstructions, setShowInstructions] = useState(true);
 
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
@@ -314,6 +317,19 @@ function ReadingPage({ story, onFinish, onExit }) {
       onExit();
     }
   };
+
+  // ==========================================
+  // NEW: Full-screen narrator instruction page
+  // ==========================================
+
+  if (showInstructions) {
+    return (
+      <InstructionPage
+        storyTitle={story.title}
+        onStart={() => setShowInstructions(false)}
+      />
+    );
+  }
 
   // Display loading errors
   if (loadError) {
