@@ -1,29 +1,71 @@
 import express from "express";
 import { upload } from "../middlewares/upload.js";
-import { analyzeReading, getLogs } from "../controllers/readingController.js";
-import { 
-  listStories, 
-  fetchPage, 
-  generateStoryQuestions, 
-  addStoryWithAiQuestions 
+
+import {
+  analyzeReading,
+  getLogs
+} from "../controllers/readingController.js";
+
+import {
+  listStories,
+  fetchPage,
+  fetchStorySequence,
+  generateStoryQuestions,
+  addStoryWithAiQuestions
 } from "../controllers/storyController.js";
-import { loginSession, updateProgress, linkStoryToSession } from "../controllers/sessionController.js";
+
+import {
+  loginSession,
+  updateProgress,
+  linkStoryToSession
+} from "../controllers/sessionController.js";
 
 const router = express.Router();
 
 // Story & Content Routes
 router.get("/stories", listStories);
-router.get("/stories/:storyId/pages/:pageNumber", fetchPage);
-router.post("/stories/:storyId/generate-questions", generateStoryQuestions);
-router.post("/stories/add", addStoryWithAiQuestions);
+
+// NEW: Retrieve the complete story sequence
+router.get(
+  "/stories/:storyId/pages",
+  fetchStorySequence
+);
+
+router.get(
+  "/stories/:storyId/pages/:pageNumber",
+  fetchPage
+);
+
+router.post(
+  "/stories/:storyId/generate-questions",
+  generateStoryQuestions
+);
+
+router.post(
+  "/stories/add",
+  addStoryWithAiQuestions
+);
 
 // Reading & Analysis Routes
-router.post("/analyze-reading", upload.single("audioFile"), analyzeReading);
+router.post(
+  "/analyze-reading",
+  upload.single("audioFile"),
+  analyzeReading
+);
+
 router.get("/logs", getLogs);
 
 // Session Routes
 router.post("/sessions/login", loginSession);
-router.put("/sessions/:sessionId/progress", updateProgress);
-router.put("/sessions/:sessionId/story", linkStoryToSession);
+
+router.put(
+  "/sessions/:sessionId/progress",
+  updateProgress
+);
+
+router.put(
+  "/sessions/:sessionId/story",
+  linkStoryToSession
+);
 
 export default router;
