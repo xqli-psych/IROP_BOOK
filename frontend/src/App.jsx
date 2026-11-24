@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 
 import WelcomePage from "./pages/WelcomePage";
 import SessionSetupPage from "./pages/SessionSetupPage";
 import StorySelectionPage from "./pages/StorySelectionPage";
 import StoryPreviewPage from "./pages/StoryPreviewPage";
+import InstructionPage from "./pages/InstructionPage";
 import ReadingPage from "./pages/ReadingPage";
 import FinishedPage from "./pages/FinishedPage";
 
@@ -42,7 +44,15 @@ function App() {
       <StoryPreviewPage
         story={selectedStory}
         onBack={() => setScreen("selection")}
-        onBegin={() => setScreen("reading")}
+        onBegin={() => setScreen("instructions")}
+      />
+    );
+  }
+
+  if (screen === "instructions") {
+    return (
+      <InstructionPage
+        onStart={() => setScreen("reading")}
       />
     );
   }
