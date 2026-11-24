@@ -33,7 +33,7 @@ VALUES (
   '/images/alligator-page-1.png', 
   '/images/alligator-page-2.png', 
   'There used to be an alligator under my bed.', 
-  'Oh wow, look at his face! Why is he carrying that big wooden board into his room?', 
+  'Why is he carrying that big heavy wooden board into his bedroom?', 
   'Tell Alice what is happening here with the boy and his bed.', 
   'He probably feels scared and worried that the alligator will get him!',
   'How do you think the boy feels about having an alligator under his bed?'
@@ -75,7 +75,7 @@ VALUES (
   '/images/alligator-page-7.png', 
   '/images/alligator-page-8.png', 
   'But they never saw it. It was up to me. I just had to do something about that alligator.', 
-  'Grown-ups never see the monsters! Look how brave he is climbing out of bed by himself!', 
+  'Mom and Dad didn''t see anything! Now the boy has to climb out of bed all by himself!', 
   'Tell Alice what happens when Mom and Dad check under the bed.', 
   'They think he is just imagining things and that there is no alligator.',
   'What do you think Mom and Dad are thinking when they look under the bed?'
@@ -103,7 +103,7 @@ VALUES (
   '/images/alligator-page-11.png', 
   '/images/alligator-page-12.png', 
   'I put a peanut butter sandwich, some fruit, and the last piece of pie in the garage.', 
-  'Look at his proud little smile! He is setting up a yummy trap in the garage!', 
+  'He is setting up a whole trail of treats all the way into the garage!', 
   'Tell Alice what the boy is setting up down the hall and in the garage.', 
   'Because he wants to lure the alligator all the way out of the house!',
   'Why do you think the boy wants to lure the alligator all the way out to the garage?'
