@@ -1,0 +1,347 @@
+
+/* Full-screen instruction page */
+
+.instruction-page,
+.instruction-page * {
+  box-sizing: border-box;
+}
+
+.instruction-page {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  width: 100%;
+  height: 100dvh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow-y: auto;
+
+  background: #faf7f0;
+  color: #392719;
+  font-family: inherit;
+}
+
+/* Header matching the reading interface */
+
+.instruction-header {
+  width: 100%;
+  flex-shrink: 0;
+
+  padding: 12px 24px;
+
+  text-align: center;
+
+  background: linear-gradient(
+    180deg,
+    #fff0d9 0%,
+    #f8dfbd 100%
+  );
+
+  border-bottom: 2px solid #efc995;
+}
+
+.instruction-header h1 {
+  margin: 0;
+
+  font-size: clamp(22px, 3.8vh, 34px);
+  font-weight: 800;
+  line-height: 1.2;
+
+  color: #392719;
+}
+
+.instruction-header p {
+  margin: 4px 0 0;
+
+  font-size: clamp(14px, 2vh, 18px);
+  font-weight: 600;
+
+  color: #76563b;
+}
+
+/* Main content */
+
+.instruction-main {
+  flex: 1 0 auto;
+
+  width: 100%;
+  max-width: 1250px;
+
+  margin: 0 auto;
+
+  padding: clamp(12px, 2.5vh, 24px) 32px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  gap: clamp(12px, 2.5vh, 24px);
+}
+
+/* Welcome message */
+
+.instruction-intro {
+  text-align: center;
+}
+
+.instruction-intro h2 {
+  margin: 0 0 6px;
+
+  font-size: clamp(28px, 5vh, 44px);
+  font-weight: 800;
+  line-height: 1.2;
+
+  color: #392719;
+}
+
+.instruction-intro p {
+  margin: 0;
+
+  font-size: clamp(18px, 2.8vh, 24px);
+  line-height: 1.4;
+
+  color: #76563b;
+}
+
+/* White instruction panel */
+
+.instruction-card {
+  width: 100%;
+  max-width: 1100px;
+
+  background: #ffffff;
+
+  border: 2px solid #ead5b9;
+  border-radius: 24px;
+
+  padding: clamp(14px, 2.5vh, 24px) 36px;
+
+  box-shadow:
+    0 8px 30px rgba(92, 64, 34, 0.08);
+}
+
+/* Individual instruction steps */
+
+.instruction-step {
+  display: flex;
+  align-items: center;
+
+  gap: 24px;
+
+  padding: clamp(6px, 1.3vh, 12px) 0;
+}
+
+.instruction-number {
+  width: clamp(44px, 7vh, 64px);
+  height: clamp(44px, 7vh, 64px);
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fce8c6;
+
+  border: 2px solid #edc68c;
+  border-radius: 50%;
+
+  font-size: clamp(24px, 3.8vh, 30px);
+  font-weight: 800;
+
+  color: #85501e;
+}
+
+.instruction-step-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.instruction-step-text h3 {
+  margin: 0 0 5px;
+
+  font-size: clamp(21px, 3vh, 27px);
+  font-weight: 750;
+  line-height: 1.25;
+
+  color: #392719;
+}
+
+.instruction-step-text p {
+  margin: 0;
+
+  font-size: clamp(18px, 2.5vh, 22px);
+  line-height: 1.4;
+
+  color: #594637;
+}
+
+.instruction-divider {
+  height: 1px;
+
+  background: #eee2d2;
+
+  margin: clamp(5px, 1vh, 10px) 0;
+}
+
+/* Start reading button */
+
+.instruction-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 8px;
+
+  text-align: center;
+}
+
+.instruction-start-btn {
+  min-width: 280px;
+  min-height: 52px;
+
+  padding: 12px 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 20px;
+
+  background: linear-gradient(
+    180deg,
+    #ffda94 0%,
+    #f8c36b 100%
+  );
+
+  border: 2px solid #e8a52f;
+  border-radius: 40px;
+
+  color: #53330d;
+
+  font-family: inherit;
+  font-size: clamp(20px, 3vh, 25px);
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 6px 18px rgba(175, 112, 25, 0.15);
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.instruction-start-btn:hover {
+  background: #f8c36b;
+  transform: translateY(-2px);
+}
+
+.instruction-start-btn:active {
+  transform: translateY(0);
+}
+
+.instruction-start-btn:focus-visible {
+  outline: 3px solid #85501e;
+  outline-offset: 5px;
+}
+
+.instruction-footer p {
+  margin: 0;
+
+  font-size: clamp(14px, 1.9vh, 17px);
+  line-height: 1.4;
+
+  color: #76563b;
+}
+
+/* Compact layout for shorter laptop screens */
+
+@media (max-height: 800px) {
+  .instruction-header {
+    padding: 10px 20px;
+  }
+
+  .instruction-main {
+    padding: 14px 30px;
+    gap: 14px;
+  }
+
+  .instruction-card {
+    padding: 14px 30px;
+  }
+
+  .instruction-step {
+    padding: 8px 0;
+  }
+
+  .instruction-divider {
+    margin: 6px 0;
+  }
+
+  .instruction-intro h2 {
+    font-size: 34px;
+  }
+
+  .instruction-intro p {
+    font-size: 20px;
+  }
+
+  .instruction-step-text h3 {
+    font-size: 23px;
+  }
+
+  .instruction-step-text p {
+    font-size: 19px;
+  }
+}
+
+/* Responsive layout for smaller screens */
+
+@media (max-width: 768px) {
+  .instruction-main {
+    padding: 20px;
+    gap: 18px;
+  }
+
+  .instruction-card {
+    padding: 18px;
+  }
+
+  .instruction-step {
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .instruction-number {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .instruction-intro h2 {
+    font-size: 30px;
+  }
+
+  .instruction-start-btn {
+    min-width: 220px;
+    max-width: 100%;
+  }
+}
+
+/* Accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  .instruction-start-btn {
+    transition: none;
+  }
+
+  .instruction-start-btn:hover {
+    transform: none;
+  }
+}
