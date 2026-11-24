@@ -10,7 +10,11 @@ import { useSession } from "../hooks/useSession";
 
 function ReadingPage({ story, onFinish, onExit }) {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(false);
+  // Three clean sequential stages:
+  // 1. "reading" - Adult reads the spread in silence (empty bottom with "Finished Reading" button).
+  // 2. "comment" - Alice appears and speaks her visual comment (audio plays; no prompt yet).
+  // 3. "prompt"  - Dialogic prompt opens for the adult to answer.
+  const [stage, setStage] = useState("reading");
   const [pageIndex, setPageIndex] = useState(0); // 0-indexed for React, but DB is 1-indexed
   const [paused, setPaused] = useState(false);
   
@@ -20,7 +24,7 @@ function ReadingPage({ story, onFinish, onExit }) {
   
   const { sessionId } = useSession();
   const commentAudioRef = useRef(null);
-  const lastPlayedPageRef = useRef(null);
+  const autoAdvanceTimerRef = useRef(null);
 
   // The actual database page number is pageIndex + 1
   const currentPageNumber = pageIndex + 1;
@@ -28,6 +32,10 @@ function ReadingPage({ story, onFinish, onExit }) {
 
   // Stop active comment audio immediately and reset
   const stopCommentAudio = () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
     if (commentAudioRef.current) {
       try {
         commentAudioRef.current.pause();
@@ -40,8 +48,11 @@ function ReadingPage({ story, onFinish, onExit }) {
   };
 
   // Play comment audio with child voice pitch & cadence
-  const playCommentVoice = (audioBase64) => {
-    if (!audioBase64) return;
+  const playCommentVoice = (audioBase64, onEndedCallback) => {
+    if (!audioBase64) {
+      if (onEndedCallback) onEndedCallback();
+      return;
+    }
     stopCommentAudio();
     try {
       const audio = new Audio("data:audio/wav;base64," + audioBase64);
@@ -49,12 +60,16 @@ function ReadingPage({ story, onFinish, onExit }) {
       audio.mozPreservesPitch = false;
       audio.webkitPreservesPitch = false;
       audio.playbackRate = 1.18;
+      if (onEndedCallback) {
+        audio.onended = onEndedCallback;
+      }
       audio.play().catch((err) => {
         console.warn("Autoplay was blocked by browser policy:", err);
       });
       commentAudioRef.current = audio;
     } catch (e) {
       console.warn("Error playing comment audio:", e);
+      if (onEndedCallback) onEndedCallback();
     }
   };
 
@@ -81,14 +96,25 @@ function ReadingPage({ story, onFinish, onExit }) {
     }
   }, [story, currentPageNumber]);
 
-  // Start interaction when the adult finishes reading the spread
+  // Stage 1 -> Stage 2: Adult finishes reading; Alice speaks visual comment first
   const handleFinishedReading = () => {
     stopCommentAudio();
-    setShowPrompt(true);
-    // Play Alice's visual comment voice once when the adult finishes reading
+    setStage("comment");
+    
     if (pageData?.commentAudioBase64) {
-      playCommentVoice(pageData.commentAudioBase64);
+      playCommentVoice(pageData.commentAudioBase64, () => {
+        // Automatically advance to prompt 800ms after Alice finishes her comment
+        autoAdvanceTimerRef.current = setTimeout(() => {
+          setStage((prev) => (prev === "comment" ? "prompt" : prev));
+        }, 800);
+      });
     }
+  };
+
+  // Stage 2 -> Stage 3: Transition to prompt manually
+  const handleProceedToPrompt = () => {
+    stopCommentAudio();
+    setStage("prompt");
   };
 
   const goToNextPageOrFinish = async () => {
@@ -96,7 +122,7 @@ function ReadingPage({ story, onFinish, onExit }) {
     // Clear old page data immediately so it can NEVER replay while loading the next page
     setPageData(null);
     setIsLoading(true);
-    setShowPrompt(false);
+    setStage("reading");
     
     if (isLastPage) {
       onFinish();
@@ -137,7 +163,7 @@ function ReadingPage({ story, onFinish, onExit }) {
         title={story.title}
         part={currentPageNumber}
         totalParts={story.total_parts}
-        onContinue={handleFinishedReading}
+        onContinue={stage === "reading" ? handleFinishedReading : handleProceedToPrompt}
         showContinue={false}
         onPause={() => {
           stopCommentAudio();
@@ -150,10 +176,10 @@ function ReadingPage({ story, onFinish, onExit }) {
           <StoryBook
             leftImage={pageData.left_image_url}
             rightImage={pageData.right_image_url}
-            faded={showPrompt}
+            faded={stage === "prompt"}
           />
 
-          {!showPrompt && (
+          {stage === "reading" && (
             <div className="reading-finish-bar">
               <button
                 type="button"
@@ -165,7 +191,16 @@ function ReadingPage({ story, onFinish, onExit }) {
             </div>
           )}
 
-          {showPrompt && (
+          {stage === "comment" && (
+            <AvatarComment
+              comment={pageData.avatar_comment}
+              hasAudio={Boolean(pageData?.commentAudioBase64)}
+              onReplay={() => playCommentVoice(pageData?.commentAudioBase64)}
+              onProceed={handleProceedToPrompt}
+            />
+          )}
+
+          {stage === "prompt" && (
             <MSTPrompt
               prompt={pageData.openPrompt || pageData.mst_prompt}
               followUpQuestionProp={pageData.followUpPrompt || pageData.follow_up_prompt}
@@ -175,7 +210,7 @@ function ReadingPage({ story, onFinish, onExit }) {
               hasCommentAudio={Boolean(pageData?.commentAudioBase64)}
               onBack={() => {
                 stopCommentAudio();
-                setShowPrompt(false);
+                setStage("reading");
               }}
               onSkip={goToNextPageOrFinish}
               onContinue={goToNextPageOrFinish}
