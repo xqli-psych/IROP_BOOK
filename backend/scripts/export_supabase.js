@@ -118,6 +118,22 @@ CREATE TABLE IF NOT EXISTS public.session_logs (
     follow_up_question TEXT
 );
 
+-- Ensure pre-existing tables match required schema & types (fixes integer estimated_time)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'stories' AND column_name = 'estimated_time' AND data_type != 'text'
+  ) THEN
+    ALTER TABLE public.stories ALTER COLUMN estimated_time TYPE TEXT USING estimated_time::TEXT;
+  END IF;
+
+  ALTER TABLE public.story_pages ADD COLUMN IF NOT EXISTS follow_up_prompt TEXT;
+  ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS question_text TEXT;
+  ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS emotion_match TEXT;
+  ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS follow_up_question TEXT;
+END $$;
+
 -- Disable Row Level Security (RLS) so service/anon keys have full read/write access
 ALTER TABLE public.stories DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.story_pages DISABLE ROW LEVEL SECURITY;
