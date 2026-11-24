@@ -132,6 +132,10 @@ BEGIN
   ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS question_text TEXT;
   ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS emotion_match TEXT;
   ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS follow_up_question TEXT;
+
+  -- Remove foreign key constraint on page_id if present from an older schema
+  -- (allows historical logs with older page UUIDs to be safely imported)
+  ALTER TABLE public.session_logs DROP CONSTRAINT IF EXISTS session_logs_page_id_fkey;
 END $$;
 
 -- Disable Row Level Security (RLS) so service/anon keys have full read/write access
