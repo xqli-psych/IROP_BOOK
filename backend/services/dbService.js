@@ -150,3 +150,59 @@ export async function updateSessionStory(sessionId, storyId) {
 
   if (error) throw error;
 }
+
+
+export async function getStorySequence(storyId) {
+  const { data, error } = await supabase
+    .from("story_pages")
+    .select("*")
+    .eq("story_id", storyId)
+    .order("page_number", { ascending: true });
+
+  if (error) throw error;
+
+  if (!data?.length) {
+    throw new Error("This story has no pages.");
+  }
+
+  const numbers = data.map(
+    (page) => Number(page.page_number)
+  );
+
+  // Validate page numbers
+  if (
+    numbers.some(
+      (number, i) =>
+        !Number.isInteger(number) ||
+        number < 1 ||
+        (i > 0 && number <= numbers[i - 1])
+    )
+  ) {
+    throw new Error(
+      "Invalid or duplicate story page numbers."
+    );
+  }
+
+  // Check for missing pages
+  if (numbers.some((number, i) => number !== i + 1)) {
+    throw new Error(
+      "Story sequence has missing page numbers."
+    );
+  }
+
+  // Validate required page content
+  if (
+    data.some(
+      (page) =>
+        !page.id ||
+        !page.left_image_url ||
+        !page.right_image_url
+    )
+  ) {
+    throw new Error(
+      "Story sequence contains incomplete page content."
+    );
+  }
+
+  return data;
+}
