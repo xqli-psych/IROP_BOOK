@@ -11,75 +11,182 @@ import { useSession } from "../hooks/useSession";
 function ReadingPage({ story, onFinish, onExit }) {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [pageIndex, setPageIndex] = useState(0); // 0-indexed for React, but DB is 1-indexed
+  const [pageIndex, setPageIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  
-  // New state for dynamic database content
-  const [pageData, setPageData] = useState(null);
+
+  // Store the complete ordered story sequence
+  const [pages, setPages] = useState([]);
+  const [loadError, setLoadError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const { sessionId } = useSession();
 
-  // The actual database page number is pageIndex + 1
-  const currentPageNumber = pageIndex + 1;
-  const isLastPage = currentPageNumber >= story.total_parts; // Using total_parts from DB
+  // Current story part from the ordered sequence
+  const pageData = pages[pageIndex] ?? null;
 
-  // Fetch page data whenever the pageIndex changes
+  const currentPageNumber =
+    pageData?.page_number ?? pageIndex + 1;
+
+  const isLastPage =
+    pages.length > 0 &&
+    pageIndex === pages.length - 1;
+
+  // Load the entire story sequence once
   useEffect(() => {
-    const fetchPage = async () => {
-      setIsLoading(true);
+    let cancelled = false;
+
+    setPages([]);
+    setPageIndex(0);
+    setShowPrompt(false);
+    setLoadError("");
+    setIsLoading(true);
+
+    async function loadSequence() {
       try {
-        const response = await apiClient.getStoryPage(story.id, currentPageNumber);
-        if (response.success && response.data) {
-          setPageData(response.data);
+        const response = await apiClient.getStorySequence(
+          story.id
+        );
+
+        if (
+          !response.success ||
+          !Array.isArray(response.data) ||
+          !response.data.length
+        ) {
+          throw new Error("Story has no pages.");
+        }
+
+        // Verify the number of parts
+        if (
+          response.data.length !== Number(story.total_parts)
+        ) {
+          throw new Error(
+            `Expected ${story.total_parts} parts, ` +
+            `found ${response.data.length}. ` +
+            "Check Supabase story content."
+          );
+        }
+
+        if (!cancelled) {
+          setPages(response.data);
         }
       } catch (err) {
-        console.error("Failed to fetch story page:", err);
-        alert("Failed to load the page. Please check your connection.");
+        console.error(
+          "Failed to load story sequence:",
+          err
+        );
+
+        if (!cancelled) {
+          setLoadError(
+            err.message || "Could not load story."
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
-    };
-
-    if (story && story.id) {
-      fetchPage();
     }
-  }, [story, currentPageNumber]);
 
+    if (story?.id) {
+      loadSequence();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [story.id, story.total_parts, retryCount]);
+
+  // Move to the next story part
   const goToNextPageOrFinish = async () => {
     setShowPrompt(false);
-    
+
     if (isLastPage) {
-      // If it's the last page, we finish the story
       onFinish();
     } else {
       const nextPageIndex = pageIndex + 1;
+
       setPageIndex(nextPageIndex);
-      
-      // Save progress to the backend session table silently in the background
+
+      // Save progress using the actual page number
       try {
-        await apiClient.updateProgress(sessionId, nextPageIndex + 1);
+        if (sessionId) {
+          await apiClient.updateProgress(
+            sessionId,
+            pages[nextPageIndex].page_number
+          );
+        }
       } catch (err) {
-        console.error("Failed to save progress", err);
+        console.error(
+          "Failed to save progress",
+          err
+        );
       }
     }
   };
 
+  // Save progress when exiting
   const handleSaveAndExit = async () => {
     try {
-      // Save the current page to the database before routing away
-      await apiClient.updateProgress(sessionId, currentPageNumber);
+      if (sessionId) {
+        await apiClient.updateProgress(
+          sessionId,
+          currentPageNumber
+        );
+      }
+
       onExit();
     } catch (err) {
-      console.error("Failed to save session before exiting:", err);
-      onExit(); // Exit anyway even if save fails
+      console.error(
+        "Failed to save session before exiting:",
+        err
+      );
+
+      onExit();
     }
   };
 
-  // Show a loading screen while waiting for the database
+  // Display errors with a retry option
+  if (loadError) {
+    return (
+      <div
+        className="app"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh"
+        }}
+      >
+        <h2>Unable to load story</h2>
+
+        <p role="alert">{loadError}</p>
+
+        <button
+          onClick={() =>
+            setRetryCount((count) => count + 1)
+          }
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Loading screen
   if (isLoading || !pageData) {
     return (
-      <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div
+        className="app"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh"
+        }}
+      >
         <h2>Loading page...</h2>
       </div>
     );
@@ -96,7 +203,11 @@ function ReadingPage({ story, onFinish, onExit }) {
         onPause={() => setPaused(true)}
       />
 
-      <main className={`reading-layout${paused ? " reading-layout-paused" : ""}`}>
+      <main
+        className={`reading-layout${
+          paused ? " reading-layout-paused" : ""
+        }`}
+      >
         <div className="reading-main">
           <StoryBook
             leftImage={pageData.left_image_url}
@@ -112,14 +223,13 @@ function ReadingPage({ story, onFinish, onExit }) {
 
           {showPrompt && (
             <MSTPrompt
+              key={pageData.id}
               prompt={pageData.mst_prompt}
               reaction={pageData.mst_response}
               avatarComment={pageData.avatar_comment}
               onBack={() => setShowPrompt(false)}
               onSkip={goToNextPageOrFinish}
               onContinue={goToNextPageOrFinish}
-              
-              // We pass these down so MSTPrompt can submit audio/text to the backend
               pageId={pageData.id}
               storyPageText={pageData.page_text}
             />
@@ -129,7 +239,9 @@ function ReadingPage({ story, onFinish, onExit }) {
         <TranscriptDrawer
           isOpen={transcriptOpen}
           transcript={pageData.page_text}
-          onToggle={() => setTranscriptOpen(!transcriptOpen)}
+          onToggle={() =>
+            setTranscriptOpen(!transcriptOpen)
+          }
         />
       </main>
 

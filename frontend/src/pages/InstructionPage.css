@@ -1,0 +1,90 @@
+
+.instruction-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  background: #f7f4ed;
+  font-family: Arial, sans-serif;
+}
+
+.instruction-card {
+  background: white;
+  max-width: 650px;
+  width: 100%;
+  padding: 45px;
+  border-radius: 22px;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+}
+
+.instruction-icon {
+  font-size: 52px;
+  margin-bottom: 12px;
+}
+
+.instruction-card h1 {
+  font-size: 32px;
+  color: #263b35;
+  margin-bottom: 8px;
+}
+
+.instruction-card h2 {
+  font-size: 23px;
+  color: #51766a;
+  margin-bottom: 32px;
+}
+
+.instruction-steps {
+  text-align: left;
+}
+
+.instruction-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.instruction-step span {
+  font-size: 30px;
+}
+
+.instruction-step h3 {
+  font-size: 22px;
+  margin: 0 0 7px;
+  color: #263b35;
+}
+
+.instruction-step p {
+  font-size: 19px;
+  line-height: 1.5;
+  margin: 0;
+  color: #444;
+}
+
+.instruction-note {
+  font-size: 18px;
+  background: #eef5ef;
+  padding: 18px;
+  border-radius: 12px;
+  margin-top: 25px;
+}
+
+.instruction-start {
+  margin-top: 22px;
+  background: #51766a;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 17px 35px;
+  font-size: 21px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+}
+
+.instruction-start:hover {
+  background: #395b50;
+}
